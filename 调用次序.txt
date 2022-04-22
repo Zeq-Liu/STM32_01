@@ -1,0 +1,8 @@
+reload->saltGen->billGen(自带入队)->
+checkAvailability(排到自己就解冻分配板子开始计时)->
+
+
+
+
+
+channel inactive时，会移除电路板和服务器的连接，此时需要电路板电源重新插拔

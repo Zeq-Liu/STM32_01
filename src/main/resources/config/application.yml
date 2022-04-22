@@ -1,0 +1,71 @@
+spring:
+  application:
+    name: fpga
+  profiles:
+    active: @env@
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driverClassName: com.mysql.jdbc.Driver
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+
+management:
+  security:
+    enabled: false #关掉安全认证
+  context-path: /management #actuator的访问路径　
+
+
+druid:
+  pool:
+    initialSize: 10
+    maxActive: 100
+    minIdle: 10
+
+
+#mybatis-plus
+mybatis-plus:
+  mapper-locations: classpath:/mapper/*Mapper.xml
+  typeAliasesPackage: com.yunfd.domain
+  typeEnumsPackage: com.yunfd.domain.enums
+  global-config:
+    id-type: 3
+    field-strategy: 2
+    auto-set-db-type: true
+    db-column-underline: true
+    refresh-mapper: true
+    logic-delete-value: 1
+    logic-not-delete-value: 0
+    sql-injector: com.baomidou.mybatisplus.mapper.LogicSqlInjector
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+
+#qiniu:
+#  accessKey: 509pYrmhmU1otvQnKIz58AvfsUEtVO2_2LlWSdPX
+#  secretKey: YouKKgK56AkU54_9A6w-2JoAKMJyBhjuVoZqg286
+#  bucket: mayuan
+#  cdnPrefix: p7y15pjdw.bkt.clouddn.com
+
+#不能用localhost,否则启动报异常:Unresolved address
+#tcp监听的端口
+tcp:
+  port: 8089
+# bossGroup的线程数
+boss:
+  thread:
+    count: 2
+# worker的线程数
+worker:
+  thread:
+    count: 2
+#是否使用长连接
+so:
+  keepalive:  true
+  backlog: 100
+
+userRedis:
+  lineName: "boardWaitingLine"
+
+userMaximumConnectionTime: 1800
+
