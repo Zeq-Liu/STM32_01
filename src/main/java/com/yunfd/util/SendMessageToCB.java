@@ -87,7 +87,7 @@ public class SendMessageToCB {
   }
 
   /**
-   * @param ctx
+   * @param ctx {ChannelHandlerContext}
    */
   public static void sendENDToCB(ChannelHandlerContext ctx) {
     // 释放板子

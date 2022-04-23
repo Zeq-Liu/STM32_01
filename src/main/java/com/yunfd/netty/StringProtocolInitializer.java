@@ -1,9 +1,4 @@
-package com.yunfd.netty;/**
- * Created with IntelliJ IDEA.
- * User: xuanjiazhen
- * Date: 2018/3/12
- * Time: 上午10:49
- */
+package com.yunfd.netty;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -14,10 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-
 /**
- * @author xuan
- * @version 1.0.0
+ * @Description
+ * @Author LiuZequan
+ * @Date 2022/4/13 11:32
+ * @Version 2.0
  */
 // channel 和客户端进行数据读写的通道 Initializer 初始化 负责添加别的handler
 @Component

@@ -1,10 +1,4 @@
 package com.yunfd.config;
-/**
- * Created with IntelliJ IDEA.
- * User: xuanjiazhen
- * Date: 2018/3/12
- * Time: 上午10:47
- */
 
 import com.yunfd.netty.StringProtocolInitializer;
 import io.netty.bootstrap.Bootstrap;
@@ -26,6 +20,14 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+/**
+ * @Description
+ * @Author LiuZequan
+ * @Date 2022/4/13 11:30
+ * @Version 1.0
+ */
+
 
 @Configuration
 public class NettyConfig {

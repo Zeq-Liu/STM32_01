@@ -5,6 +5,14 @@ import io.netty.channel.ChannelHandlerContext;
 
 import java.util.HashMap;
 
+/**
+ * @Description
+ * @Author LiuZequan
+ * @Date 2022/4/13 11:32
+ * @Version 2.0
+ */
+
+
 /*
     单例模式实现此类
     {
