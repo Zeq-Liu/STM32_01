@@ -4,12 +4,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.hdu</groupId>
-  <artifactId>hdu-fpga</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <artifactId>hdu-stm32</artifactId>
+  <version>0.0.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>hdu-fpga</name>
-  <description>杭电FPGA平台后端</description>
+  <name>hdu-stm32</name>
+  <description>杭电STM32板卡服务后台</description>
 
   <profiles>
     <profile>

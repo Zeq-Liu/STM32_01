@@ -1,10 +1,8 @@
 package com.yunfd.service.impl;
 
-import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.yunfd.config.CommonParams;
 import com.yunfd.domain.CbUseTime;
-import com.yunfd.domain.CircuitBoard;
 import com.yunfd.domain.vo.UserConnectionVo;
 import com.yunfd.mapper.CbUseTimeMapper;
 import com.yunfd.service.CbUseTimeService;
@@ -12,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * @Author Barry

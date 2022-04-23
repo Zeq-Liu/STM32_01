@@ -7,7 +7,6 @@ import cn.hutool.core.util.ReUtil;
 import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.baomidou.mybatisplus.service.impl.ServiceImpl;
 import com.yunfd.config.CommonParams;
-import com.yunfd.domain.CbUseTime;
 import com.yunfd.domain.CircuitBoard;
 import com.yunfd.domain.vo.UserConnectionVo;
 import com.yunfd.mapper.CircuitBoardMapper;
@@ -20,13 +19,10 @@ import com.yunfd.util.SendMessageToCB;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by DJ on 2018/7/8.

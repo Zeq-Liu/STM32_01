@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 public class CommonParams {
   @Deprecated
-  public final static String fileBaseRelativeURL = "hdu/upload/";
+  public final static String fileBaseRelativeURL = "yunfd/upload/";
 
   @Deprecated
   public final static String bitFileStaticName = "vote5v1_1";
@@ -36,7 +36,7 @@ public class CommonParams {
 
 
   public static String getBase() {
-    String base = "hdu/operation/";
+    String base = "yunfd/operation/";
     String absolutePath = FileUtil.getAbsolutePath(base);
     if (absolutePath.contains("target/")) return "../../" + base;
     else return base;
@@ -48,7 +48,7 @@ public class CommonParams {
   }
 
   public static String getBitFileBase() {
-    String base = "hdu/upload/";
+    String base = "yunfd/upload/";
     String absolutePath = FileUtil.getAbsolutePath(base);
     if (absolutePath.contains("target/")) return "../../" + base;
     else return base;

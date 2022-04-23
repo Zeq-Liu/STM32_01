@@ -1,10 +1,8 @@
 package com.yunfd.netty;
 
-import com.yunfd.config.CommonParams;
 import com.yunfd.domain.CircuitBoard;
 import com.yunfd.service.CircuitBoardService;
 import com.yunfd.util.RedisUtils;
-import com.yunfd.util.SendMessageToCB;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler;
@@ -19,7 +17,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 /**
@@ -66,28 +63,29 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         byteBuf.readBytes(msg);
         System.out.println("板卡消息:" + new String(msg));
 
-        // if (new String(msg).contains("111")) {
-        //     ByteBuf bf = Unpooled.copiedBuffer("NNN", CharsetUtil.UTF_8);
-        //     ctx.writeAndFlush(new DatagramPacket(bf,
-        //             new InetSocketAddress(ip, port)));
-        //     System.out.println("发送成功");
-        // }
-
-
-        // 电路板客户端登录  信息 mod,,,#XXXX#
         if (new String(msg).contains("111")) {
-            // String[] logins = datagramPacket.split("Login");
-            // String long_id = (logins[1].split("#"))[1];
-            String long_id= new String(msg);
-            String reg = "^[0-9A-Fa-f]{4}$";
-            // 刷新板卡和服务器的连接倒计时
-            redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
-            // 往NettySocketHolder(Map)和数据库中初始化这块电路板
-            if (long_id.matches(reg) && long_id.length() == 4) {
-                insertNewTOMap(ctx, long_id);
-                insertNewTODataBase(ctx, long_id);
-            } else log.info("电路板longId为" + long_id + " 格式不对，被拒绝加入map和DB");
+            ByteBuf bf = Unpooled.copiedBuffer("NNN", CharsetUtil.UTF_8);
+            ctx.writeAndFlush(new DatagramPacket(bf,
+                    new InetSocketAddress(ip, port)));
+            System.out.println("发送成功");
+            log.info("---------------------------------");
         }
+
+
+        // 电路板客户端登录
+        // if (new String(msg).contains("111")) {
+        //     // String[] logins = datagramPacket.split("Login");
+        //     // String long_id = (logins[1].split("#"))[1];
+        //     String long_id= new String(msg);
+        //     String reg = "^[0-9A-Fa-f]{4}$";
+        //     // 刷新板卡和服务器的连接倒计时
+        //     redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
+        //     // 往NettySocketHolder(Map)和数据库中初始化这块电路板
+        //     if (long_id.matches(reg) && long_id.length() == 4) {
+        //         insertNewTOMap(ctx, long_id);
+        //         insertNewTODataBase(ctx, long_id);
+        //     } else log.info("电路板longId为" + long_id + " 格式不对，被拒绝加入map和DB");
+        // }
 /*
     // 心跳包
     if (datagramPacket.contains("Heartbeat")) {// heart...#XXXX#

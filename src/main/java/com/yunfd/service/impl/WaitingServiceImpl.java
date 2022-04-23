@@ -1,17 +1,13 @@
 package com.yunfd.service.impl;
 
 import cn.hutool.core.convert.Convert;
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.lang.Validator;
 import com.yunfd.config.CommonParams;
 import com.yunfd.domain.CircuitBoard;
 import com.yunfd.domain.vo.UserConnectionVo;
-import com.yunfd.netty.NettySocketHolder;
 import com.yunfd.service.BoardOperationService;
 import com.yunfd.service.WaitingService;
 import com.yunfd.util.RedisUtils;
-import com.yunfd.util.SendMessageToCB;
-import io.netty.channel.ChannelHandlerContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;

@@ -6,10 +6,6 @@ package com.yunfd.util;
  * Time: 上午11:20
  */
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.google.gson.JsonObject;
-import net.sf.json.JSONObject;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -18,7 +14,6 @@ import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.ProtocolException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 
 /**

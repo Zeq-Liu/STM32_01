@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.mapper.EntityWrapper;
 import com.yunfd.config.CommonParams;
 import com.yunfd.domain.CircuitBoard;
 import com.yunfd.domain.vo.UserConnectionVo;
-import com.yunfd.domain.vo.UserVo;
 import com.yunfd.netty.NettySocketHolder;
 import com.yunfd.service.*;
 import com.yunfd.util.RedisUtils;
@@ -14,7 +13,6 @@ import com.yunfd.web.vo.ResultVO;
 import io.netty.channel.ChannelHandlerContext;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
-import org.omg.CORBA.CTX_RESTRICT_SCOPE;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

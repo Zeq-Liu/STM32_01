@@ -1,7 +1,7 @@
 package com.yunfd.util;
 
 import cn.hutool.core.io.file.FileNameUtil;
-import com.yunfd.HduFPGAJavaApplication;
+import com.yunfd.STM32JavaApplication;
 import com.yunfd.config.CommonParams;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class SendMessageToCB {
     //keypoint 更新操作计时器
     String token = FileNameUtil.mainName(BIT_FILE_PATH);
     //获取redis操作工具
-    RedisUtils redisUtils = HduFPGAJavaApplication.ac.getBean(RedisUtils.class);
+    RedisUtils redisUtils = STM32JavaApplication.ac.getBean(RedisUtils.class);
     redisUtils.set(CommonParams.REDIS_OP_TTL_PREFIX + token, true, CommonParams.REDIS_OP_TTL_LIMIT);
 
     //存储一个包一个包（12800/一个包）

@@ -5,7 +5,6 @@ import cn.hutool.core.lang.Validator;
 import com.yunfd.config.CommonParams;
 import com.yunfd.domain.CircuitBoard;
 import com.yunfd.domain.vo.UserConnectionVo;
-import com.yunfd.domain.vo.UserVo;
 import com.yunfd.service.CircuitBoardService;
 import com.yunfd.service.WaitingService;
 import com.yunfd.util.RedisUtils;
