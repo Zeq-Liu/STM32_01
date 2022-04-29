@@ -1,5 +1,6 @@
 package com.yunfd.netty;
 
+import com.yunfd.config.CommonParams;
 import com.yunfd.domain.CircuitBoard;
 import com.yunfd.service.CircuitBoardService;
 import com.yunfd.util.RedisUtils;
@@ -73,19 +74,19 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
 
 
         // 电路板客户端登录
-        // if (new String(msg).contains("111")) {
-        //     // String[] logins = datagramPacket.split("Login");
-        //     // String long_id = (logins[1].split("#"))[1];
-        //     String long_id= new String(msg);
-        //     String reg = "^[0-9A-Fa-f]{4}$";
-        //     // 刷新板卡和服务器的连接倒计时
-        //     redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
-        //     // 往NettySocketHolder(Map)和数据库中初始化这块电路板
-        //     if (long_id.matches(reg) && long_id.length() == 4) {
-        //         insertNewTOMap(ctx, long_id);
-        //         insertNewTODataBase(ctx, long_id);
-        //     } else log.info("电路板longId为" + long_id + " 格式不对，被拒绝加入map和DB");
-        // }
+        if (new String(msg).contains("111")) {
+            // String[] logins = datagramPacket.split("Login");
+            // String long_id = (logins[1].split("#"))[1];
+            String long_id= new String(msg);
+            String reg = "^[0-9A-Fa-f]{4}$";
+            // 刷新板卡和服务器的连接倒计时
+            redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
+            // 往NettySocketHolder(Map)和数据库中初始化这块电路板
+            if (long_id.matches(reg) && long_id.length() == 4) {
+                insertNewTOMap(ctx, long_id);
+                insertNewTODataBase(ctx, long_id);
+            } else log.info("电路板longId为" + long_id + " 格式不对，被拒绝加入map和DB");
+        }
 /*
     // 心跳包
     if (datagramPacket.contains("Heartbeat")) {// heart...#XXXX#
