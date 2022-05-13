@@ -1,13 +1,17 @@
-package com.yunfd.util;
+package com.yunfd.util.core;
 
 import cn.hutool.core.io.file.FileNameUtil;
 import com.yunfd.STM32JavaApplication;
 import com.yunfd.config.CommonParams;
+import com.yunfd.util.ByteToFileUtil;
+import com.yunfd.util.RedisUtils;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.socket.DatagramPacket;
+import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.net.InetSocketAddress;
 
 /**
  * @Description
@@ -19,16 +23,15 @@ import java.util.List;
 @Slf4j
 public class SendMessageToCB {
 
+    // public static DatagramPacket datagramPacketMsg;
+    public static String backtrack;
+
     /**
      * 烧录过程  在bit文件传到位后进行调用
      */
 
-    public static void recordBitOnCB(ChannelHandlerContext ctx, String BIT_FILE_PATH, int count) {
-        log.info("烧录文件位置：" + BIT_FILE_PATH);
-        byte[] b = ByteToFileUtil.getBytes(BIT_FILE_PATH);
-
-        double limit = Math.ceil(b.length / (CommonParams.sliceSize + 0.0));
-        //todo 有优化空间......
+    public static void recordBitOnCB(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String BIT_FILE_PATH, int count) {
+        //count为发送文件时的第几次发送标志，从0开始，0和1有其他意思
 
         //keypoint 更新操作计时器
         String token = FileNameUtil.mainName(BIT_FILE_PATH);
@@ -36,51 +39,36 @@ public class SendMessageToCB {
         RedisUtils redisUtils = STM32JavaApplication.ac.getBean(RedisUtils.class);
         redisUtils.set(CommonParams.REDIS_OP_TTL_PREFIX + token, true, CommonParams.REDIS_OP_TTL_LIMIT);
 
-        //存储一个包一个包（12800/一个包）
-        List<String> stringList = new ArrayList<>();
-        for (int i = 0; i < limit; i++) {
-            int length = CommonParams.sliceSize;
-            if (i + 1 >= limit) {
-                length = b.length % CommonParams.sliceSize;
-            }
-            byte[] dest = new byte[CommonParams.sliceSize];
-            //截取数组
-            System.arraycopy(b, i * CommonParams.sliceSize, dest, 0, length);
-            stringList.add(ByteToFileUtil.bytesToHexString(dest)); // 存入链表
-        }
+        log.info("烧录文件位置：" + BIT_FILE_PATH);
+        byte[] bytes = ByteToFileUtil.getBytes(BIT_FILE_PATH);
+        double limit = Math.ceil(bytes.length / (CommonParams.sliceSize + 0.0));
+        String md5 = MD5Util.generateMD5(BIT_FILE_PATH);
 
+        System.out.println("count：" + count);
         //发送到板卡 第0次和第1次数据发送有其他意思
         if (count == 0) {
-            ctx.channel().writeAndFlush("NNN");
-            ctx.channel().writeAndFlush("CALL 1234 #");
-            log.info("the first time to send message");
+            System.out.println("文件传输次数：" + limit);
+            sendMsgByUdp(ctx, socketAddress, "Begin#" + limit + "#");
         } else if (count == 1) {
-            // b.length 文件字节数  传输前置
-            int size = b.length / CommonParams.sliceSize;
-            System.out.println("send size " + size);
-            StringBuilder sizeString = new StringBuilder(Integer.toHexString(size));
-            for (int i = sizeString.length(); i < 3; i++) {
-                sizeString.insert(0, "0");
+            System.out.println("文件的MD5码：" + md5);
+            sendMsgByUdp(ctx, socketAddress, "MD5#" + md5 + "#");
+        } else if (count - 2 < limit) {
+            // length：文件片段长度
+            int length = CommonParams.sliceSize;
+
+            // 文件的最后一截长度
+            if (bytes.length / CommonParams.sliceSize == count - 2) {
+                length = bytes.length % CommonParams.sliceSize;
             }
-            System.out.println("16进制的文件长度：" + sizeString);
-            // 文件长度 * 2
-            int c = b.length * 2;
-            StringBuilder sizeString2 = new StringBuilder(Integer.toHexString(c));
-            for (int i = sizeString2.length(); i < 6; i++) {
-                sizeString2.insert(0, "0");
-            }
-            System.out.println("双倍16进制的文件长度：" + sizeString2);
-            // 前三位是分片的片数-1，后六位是文件字节数*2。都以十六进制表示后并串联
-            sizeString.append(sizeString2);
-            ctx.channel().writeAndFlush("SIZE#" + sizeString + "#");
-        } else if (count < limit + 2) {
-            // int x = Integer.parseInt(count - 1 + "", 16) * 2 + 20;
-            // String size = Integer.toHexString(x);
-            // System.out.println("the " + count + " time to send message " + size);
-            ctx.channel().writeAndFlush("FIL" + "FF" + stringList.get(count - 2));
-            System.out.println("第 " + count + " 次发送数据 " + stringList.get(count - 2).length() * 2);
+            //文件段存储变量
+            byte[] fragment = new byte[length];
+            System.arraycopy(bytes, (count - 2) * CommonParams.sliceSize, fragment, 0, length);
+            System.out.println("第 " + (count - 2) + " 次发送文件片段 ");
+            System.out.println("第 " + (count - 2) + " 次发送文件片段 " + new String(fragment));
+            sendMsgByUdp(ctx, socketAddress, "File#" + (count - 2) + "#" + new String(fragment));
         } else {
             System.out.println("烧录完毕");
+            sendMsgByUdp(ctx, socketAddress, "Over#");
         }
     }
 
@@ -88,18 +76,18 @@ public class SendMessageToCB {
      * @param ctx
      * @param BUTTON_STRING
      */
-    public static void sendButtonStringToCB(ChannelHandlerContext ctx, String BUTTON_STRING) {
-        // NNN 是用户结束 和超时断线用的  "NNN #" + BUTTON_STRING + "#"
+    public static void sendButtonStringToCB(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String BUTTON_STRING) {
         System.out.println("CTR #" + BUTTON_STRING + "#");
-        ctx.channel().writeAndFlush("CTR #" + BUTTON_STRING + "#");
+        sendMsgByUdp(ctx, socketAddress, "CTR #" + BUTTON_STRING + "#");
     }
 
     /**
      * @param ctx {ChannelHandlerContext}
      */
-    public static void sendENDToCB(ChannelHandlerContext ctx) {
+    public static void sendENDToCB(ChannelHandlerContext ctx, InetSocketAddress socketAddress) {
         // 释放板子
-        ctx.channel().writeAndFlush("NNN");
+        // ctx.channel().writeAndFlush("NNN");
+        sendMsgByUdp(ctx, socketAddress, "NNN");
     }
 
 
@@ -216,4 +204,11 @@ public class SendMessageToCB {
 
         return finalString;
     }
+
+
+    // udp 发送消息
+    public static void sendMsgByUdp(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String msg) {
+        ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(msg, CharsetUtil.UTF_8), socketAddress));
+    }
+
 }

@@ -14,8 +14,10 @@ import lombok.*;
 public class CircuitBoard extends BaseModel<CircuitBoard> {
 
   // 有用
-
+  //ip地址
   private String cbIp;                    //32
+  //端口
+  private int cbPort;
   //是否被占用
   private String status;
   //是否被预定

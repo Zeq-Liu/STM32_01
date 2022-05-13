@@ -3,6 +3,7 @@ package com.yunfd.netty;
 import com.yunfd.service.CircuitBoardService;
 import io.netty.channel.ChannelHandlerContext;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 
 /**
@@ -33,66 +34,72 @@ import java.util.HashMap;
 //线程安全的懒汉模式
 public class NettySocketHolder {
 
-  private CircuitBoardService circuitBoardService;
+    private CircuitBoardService circuitBoardService;
 
-  // 单例实例 单例实例中的一个属性是 map 故保证了该属性的单例性
-  private static NettySocketHolder Holder = null;
+    // 单例实例 单例实例中的一个属性是 map 故保证了该属性的单例性
+    private static NettySocketHolder Holder = null;
 
-  // 单例实例的属性 keypoint 目前为止100块板子
-  private static HashMap<String, HashMap<String, Object>> nettySocketHolder = new HashMap<>(100);
+    // 单例实例的属性 keypoint 目前为止100块板子
+    private static final HashMap<String, HashMap<String, Object>> nettySocketHolder = new HashMap<>(100);
 
-  private NettySocketHolder() {
-  }
-
-  // DCL 单例模式
-  public static NettySocketHolder getInstance() {
-    if (null == Holder) {
-      synchronized (NettySocketHolder.class) {
-        if (null == Holder) {
-          Holder = new NettySocketHolder();
-        }
-      }
+    private NettySocketHolder() {
     }
-    return Holder;
-  }
+
+    // DCL 单例模式
+    public static NettySocketHolder getInstance() {
+        if (null == Holder) {
+            synchronized (NettySocketHolder.class) {
+                if (null == Holder) {
+                    Holder = new NettySocketHolder();
+                }
+            }
+        }
+        return Holder;
+    }
 
 
-  //============================直接对属性进行操作==========================
+    //============================直接对属性进行操作==========================
 
-  /**
-   * 将信息存入map
-   */
-  public static void put(String longId, HashMap<String, Object> info) {
-    getInstance().nettySocketHolder.put(longId, info);
-  }
+    /**
+     * 将信息存入map
+     */
+    public static void put(String longId, HashMap<String, Object> info) {
+        getInstance().nettySocketHolder.put(longId, info);
+    }
 
-  /**
-   * 从map中替换
-   */
-  public static void replace(String longId, HashMap<String, Object> info) {
-    getInstance().nettySocketHolder.replace(longId, info);
-  }
+    /**
+     * 从map中替换
+     */
+    public static void replace(String longId, HashMap<String, Object> info) {
+        getInstance().nettySocketHolder.replace(longId, info);
+    }
 
-  /**
-   * 从map中删除
-   */
-  public static void remove(String longId) {
-    getInstance().nettySocketHolder.remove(longId);
-  }
+    /**
+     * 从map中删除
+     */
+    public static void remove(String longId) {
+        getInstance().nettySocketHolder.remove(longId);
+    }
 
-  /**
-   * 返回 info
-   */
-  public static HashMap<String, Object> getInfo(String longId) {
-    return getInstance().nettySocketHolder.get(longId);
-  }
+    /**
+     * 返回 info
+     */
+    public static HashMap<String, Object> getInfo(String longId) {
+        return getInstance().nettySocketHolder.get(longId);
+    }
 
 
-  /**
-   * 返回 ctx
-   */
-  public static ChannelHandlerContext getCtx(String longId) {
-    ChannelHandlerContext ctx = (ChannelHandlerContext) NettySocketHolder.getInfo(longId).get("ctx");
-    return ctx;
-  }
+    /**
+     * 返回 ctx
+     */
+    public static ChannelHandlerContext getCtx(String longId) {
+        return (ChannelHandlerContext) NettySocketHolder.getInfo(longId).get("ctx");
+    }
+
+    /**
+     * 返回 InetSocketAddress
+     */
+    public static InetSocketAddress getSocketAddress(String longId) {
+        return new InetSocketAddress((String) NettySocketHolder.getInfo(longId).get("ip"), (int) NettySocketHolder.getInfo(longId).get("port"));
+    }
 }

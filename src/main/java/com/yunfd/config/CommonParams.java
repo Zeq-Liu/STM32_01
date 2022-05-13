@@ -13,7 +13,7 @@ public class CommonParams {
   @Deprecated
   public final static String bitFileStaticName = "vote5v1_1";
 
-  public final static int sliceSize = 12800;
+  public final static int sliceSize = 1024;
   public final static String[] authorizedPlatforms = {"bigData", "interrupt"};
 
   //保持连接 身份->true

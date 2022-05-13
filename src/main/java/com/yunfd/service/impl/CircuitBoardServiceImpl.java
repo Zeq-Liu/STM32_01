@@ -15,7 +15,7 @@ import com.yunfd.service.CbUseTimeService;
 import com.yunfd.service.CircuitBoardService;
 import com.yunfd.service.IdentifyService;
 import com.yunfd.util.RedisUtils;
-import com.yunfd.util.SendMessageToCB;
+import com.yunfd.util.core.SendMessageToCB;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -117,7 +117,7 @@ public class CircuitBoardServiceImpl extends ServiceImpl<CircuitBoardMapper, Cir
         for (CircuitBoard board : selectList) {
           String longId = board.getLongId();
           ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
-          SendMessageToCB.sendENDToCB(ctx);
+          SendMessageToCB.sendENDToCB(ctx,NettySocketHolder.getInstance().getSocketAddress(longId));
 
           //更新map
           HashMap<String, Object> info = NettySocketHolder.getInfo(longId);

@@ -81,9 +81,7 @@ public class NettyConfig {
         b.group(group)
                 .channel(NioDatagramChannel.class)
                 .handler(protocolInitializer)
-                .option(ChannelOption.SO_KEEPALIVE, keepAlive)
-                .option(ChannelOption.SO_REUSEADDR, true)
-                .option(ChannelOption.SO_BACKLOG, backlog);
+                .option(ChannelOption.SO_REUSEADDR, true);
 
         return b;
 
