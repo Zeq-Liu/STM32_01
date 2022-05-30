@@ -5,6 +5,7 @@ import com.yunfd.STM32JavaApplication;
 import com.yunfd.config.CommonParams;
 import com.yunfd.util.ByteToFileUtil;
 import com.yunfd.util.RedisUtils;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -12,6 +13,9 @@ import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+
+import static com.yunfd.util.ByteToFileUtil.bytesToHexString;
 
 /**
  * @Description
@@ -39,19 +43,20 @@ public class SendMessageToCB {
         RedisUtils redisUtils = STM32JavaApplication.ac.getBean(RedisUtils.class);
         redisUtils.set(CommonParams.REDIS_OP_TTL_PREFIX + token, true, CommonParams.REDIS_OP_TTL_LIMIT);
 
-        log.info("烧录文件位置：" + BIT_FILE_PATH);
+        // log.info("烧录文件位置：" + BIT_FILE_PATH);
         byte[] bytes = ByteToFileUtil.getBytes(BIT_FILE_PATH);
         double limit = Math.ceil(bytes.length / (CommonParams.sliceSize + 0.0));
+        System.out.println("limit: " + (int)limit);
         String md5 = MD5Util.generateMD5(BIT_FILE_PATH);
 
         System.out.println("count：" + count);
         //发送到板卡 第0次和第1次数据发送有其他意思
-        if (count == 0) {
+        if (count == 1) {
             System.out.println("文件传输次数：" + limit);
-            sendMsgByUdp(ctx, socketAddress, "Begin#" + limit + "#");
-        } else if (count == 1) {
-            System.out.println("文件的MD5码：" + md5);
-            sendMsgByUdp(ctx, socketAddress, "MD5#" + md5 + "#");
+            sendMsgByUdp(ctx, socketAddress, "Begin#" + String.format("%02d",(int)limit));
+            // } else if (count == 1) {
+            //     System.out.println("文件的MD5码：" + md5);
+            //     sendMsgByUdp(ctx, socketAddress, "MD5#" + md5);
         } else if (count - 2 < limit) {
             // length：文件片段长度
             int length = CommonParams.sliceSize;
@@ -63,12 +68,14 @@ public class SendMessageToCB {
             //文件段存储变量
             byte[] fragment = new byte[length];
             System.arraycopy(bytes, (count - 2) * CommonParams.sliceSize, fragment, 0, length);
-            System.out.println("第 " + (count - 2) + " 次发送文件片段 ");
-            System.out.println("第 " + (count - 2) + " 次发送文件片段 " + new String(fragment));
-            sendMsgByUdp(ctx, socketAddress, "File#" + (count - 2) + "#" + new String(fragment));
+            // System.out.println("第 " + (count - 2) + " 次发送文件片段 ");
+            //bytesToHexString(("File#" + String.format("%02d",(count - 1)) + "#").getBytes())
+
+            System.out.println(bytesToHexString(("File#" + String.format("%02d",(count - 1)) + "#").getBytes()) + bytesToHexString(fragment));
+            sendMsgByUdp2(ctx, socketAddress, bytesToHexString(("File#" + String.format("%02d",(count - 1)) + "#").getBytes()) + bytesToHexString(fragment));
         } else {
             System.out.println("烧录完毕");
-            sendMsgByUdp(ctx, socketAddress, "Over#");
+            // sendMsgByUdp(ctx, socketAddress, "Over");
         }
     }
 
@@ -211,4 +218,17 @@ public class SendMessageToCB {
         ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(msg, CharsetUtil.UTF_8), socketAddress));
     }
 
+    //  将 16 进制的字符串转成字符数组
+    public static byte[] getHexBytes(String str){
+        byte[] bytes = new byte[str.length() / 2];
+        for(int i = 0; i < str.length() / 2; i++) {
+            String subStr = str.substring(i * 2, i * 2 + 2);
+            bytes[i] = (byte) Integer.parseInt(subStr, 16);
+        }
+        return bytes;
+    }
+
+    public static void sendMsgByUdp2(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String msg) {
+        ctx.writeAndFlush(new DatagramPacket(Unpooled.copiedBuffer(getHexBytes(msg)), socketAddress));
+    }
 }

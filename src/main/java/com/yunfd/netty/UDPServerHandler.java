@@ -59,7 +59,7 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         String ip = socketAddress.getAddress().getHostAddress();
         // int port = socketAddress.getPort();
         // System.out.println("板卡的IP地址为：" + ip + "，PORT端口：" + port);
-        System.out.println("板卡网络地址：" + socketAddress);
+        //System.out.println("板卡网络地址：" + socketAddress);
 
         // 分析数据报包，拿到其中携带的消息
         ByteBuf byteBuf = datagramPacket.content();
@@ -99,14 +99,15 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         // 心跳包
         if (msg.contains("Heartbeat")) {// heart...#XXXX#
             String[] heartbeats = msg.split("Heartbeat");
-            String long_id = (heartbeats[1].split("#"))[1];
+            String long_id = heartbeats[1].split("#")[1];
             //刷新板卡和服务器的连接倒计时
             redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
-            System.out.println("心跳包: 来自long_id: " + long_id + " ip: " + ip);
+            //System.out.println("心跳包: 来自long_id: " + long_id + " ip: " + ip);
             String reg = "^[0-9A-Fa-f]{4}$";
             if (long_id.matches(reg) && long_id.length() == 4) {
                 updateMap(ctx, socketAddress, long_id);
-            } else System.out.println("电路板longId为" + long_id + " 格式不对，被拒绝更新");
+                // SendMessageToCB.recordBitOnCB(ctx, socketAddress, "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-fpga-backend\\hdu\\upload\\led.bin", 0);
+            } //else System.out.println("电路板longId为" + long_id + " 格式不对，被拒绝更新");
         }
 
         // 烧录过程
@@ -119,7 +120,7 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             HashMap<String, Object> info = NettySocketHolder.getInfo(long_id);
             // count是 发送数据的次数 bit文件烧录时转byte
             int count = (int) info.get("count");
-            System.out.println("count: " + count + 1);
+            // System.out.println("count: " + count + 1);
             String filepath = (String) info.get("filePath");
             System.out.println("filepath：" + filepath);
             SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, count + 1);
@@ -194,30 +195,42 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             HashMap<String, Object> info = NettySocketHolder.getInfo(long_id);
             // count是 发送数据的次数 bit文件烧录时转byte
             int count = (int) info.get("count");
-            System.out.println("count: " + count);
+            // System.out.println("count: " + count);
             String filepath = (String) info.get("filePath");
             System.out.println("filepath：" + filepath);
 
-            // count 初始为 0
+            // count 初始为 1
             switch (flag) {
                 case "Size":
-                    SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, 1);
-                    break;
-                case "MD5":
                     SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, 2);
                     NettySocketHolder.getInfo(long_id).put("count", 3);
                     break;
+                // case "MD5":
+                //     SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, 2);
+                //     NettySocketHolder.getInfo(long_id).put("count", 3);
+                //     break;
                 case "File":
                     SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, count);
                     NettySocketHolder.getInfo(long_id).put("count", count + 1);
                     break;
                 case "undone":
-                    String c = msg.split("#")[3];
-                    SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, Integer.parseInt(c));
+                    // String c = msg.split("#")[3];
+                    // SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, Integer.parseInt(c));
+                    break;
+                case "Over":
+                    System.out.println("------------------板卡烧录完毕----------------");
                     break;
             }
 
         }
+
+
+        // if (msg.contains("Over")){
+        //     String long_id = msg.split("#")[1];
+        //     System.out.println("long_id：" + long_id);
+        //     System.out.println("--------------------------------------------------");
+        //
+        // }
     }
 
     @Override
@@ -268,8 +281,8 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         info.put("nixieTubeStatus", "");
         info.put("longId", long_id);
         // 之后要删除
-        info.put("count", 0);
-        info.put("filePath", "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-fpga-backend\\hdu\\upload\\interrupt_12345_123_1a2fbdddc70943e2bb985dcf5c34ffbc.bit");
+        info.put("count", 1);
+        info.put("filePath", "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-fpga-backend\\hdu\\upload\\udpled.bin");
         return info;
     }
 
