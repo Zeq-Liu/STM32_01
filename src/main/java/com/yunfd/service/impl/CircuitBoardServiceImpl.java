@@ -108,7 +108,8 @@ public class CircuitBoardServiceImpl extends ServiceImpl<CircuitBoardMapper, Cir
   @Override
   public String simplyFreeCB(String cbIp) {
     //正则匹配，检查有效性
-    final String reg = "^(\\d+\\.){3}\\d+:\\d+$";
+    // final String reg = "^(\\d+\\.){3}\\d+:\\d+$";
+    final String reg = "^(\\d+\\.){3}\\d+$";
     boolean match = ReUtil.isMatch(reg, cbIp);
 
     if (match) {

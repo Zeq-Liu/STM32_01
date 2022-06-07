@@ -5,7 +5,6 @@ import com.yunfd.STM32JavaApplication;
 import com.yunfd.config.CommonParams;
 import com.yunfd.util.ByteToFileUtil;
 import com.yunfd.util.RedisUtils;
-import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.DatagramPacket;
@@ -13,7 +12,6 @@ import io.netty.util.CharsetUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 
 import static com.yunfd.util.ByteToFileUtil.bytesToHexString;
 
@@ -34,7 +32,7 @@ public class SendMessageToCB {
      * 烧录过程  在bit文件传到位后进行调用
      */
 
-    public static void recordBitOnCB(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String BIT_FILE_PATH, int count) {
+    public static void recordBinOnCB(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String BIT_FILE_PATH, int count) {
         //count为发送文件时的第几次发送标志，从0开始，0和1有其他意思
 
         //keypoint 更新操作计时器
@@ -75,7 +73,6 @@ public class SendMessageToCB {
             sendMsgByUdp2(ctx, socketAddress, bytesToHexString(("File#" + String.format("%02d",(count - 1)) + "#").getBytes()) + bytesToHexString(fragment));
         } else {
             System.out.println("烧录完毕");
-            // sendMsgByUdp(ctx, socketAddress, "Over");
         }
     }
 

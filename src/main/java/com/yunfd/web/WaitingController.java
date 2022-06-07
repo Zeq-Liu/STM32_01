@@ -48,7 +48,8 @@ public class WaitingController {
   public ResultVO checkAvailability(HttpServletRequest request) {
     String token = request.getHeader("token");
     Long number = waitingService.getNumberOfPeopleInFrontOfUser(token);
-    if (Validator.isNotNull(number) && number == 0) {
+    // 原始： if (Validator.isNotNull(number) && number == 0) {
+    if (Validator.isNotNull(number)) {
       CircuitBoard board = circuitBoardService.getAFreeBoard();
       if (Validator.isNotNull(board)) {
         waitingService.unfreezeConnection(token, board);

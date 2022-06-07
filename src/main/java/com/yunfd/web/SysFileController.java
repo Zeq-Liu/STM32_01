@@ -35,30 +35,30 @@ public class SysFileController extends BaseController<SysFileService, SysFile> {
     return ResultVO.ok(sysFileList);
   }
 
-  // keypoint 只接受bit文件!!!
-  @ApiOperation("上传bit文件")
-  @PostMapping("/uploadBitFile")
-  public ResultVO uploadBitFile(HttpServletRequest request, @RequestParam("file") MultipartFile file) throws Exception {
+  // keypoint 只接受bin文件!!!
+  @ApiOperation("上传bin文件")
+  @PostMapping("/uploadBinFile")
+  public ResultVO uploadBinFile(HttpServletRequest request, @RequestParam("file") MultipartFile file) throws Exception {
     String originalFilename = file.getOriginalFilename();
-    String bitReg = ".*?\\.bit$";
+    String binReg = ".*?\\.bin$";
 
-    if (originalFilename.matches(bitReg)) {
+    if (originalFilename.matches(binReg)) {
       try {
         //后缀成功匹配
         String token = request.getHeader("token");
-        String filePath = CommonParams.getFullBitFilePath(token);
+        String filePath = CommonParams.getFullBinFilePath(token);
         FileUtil.del(filePath);
         boardOperationService.clearSteps(token);
 
-        saveFile(file, CommonParams.getBitFileBase(), filePath);
+        saveFile(file, CommonParams.getBinFileBase(), filePath);
 
         SysFile sysFile = new SysFile();
-        sysFile.setFileType("bit");
+        sysFile.setFileType("bin");
         sysFile.setCreateTime(new Date());
         sysFile.setDirectfilePath(filePath);
         sysFile.setCreateUserId(token);
         sysFileService.insertOrUpdate(sysFile);
-        boardOperationService.recordBitFileToBoardForTheFirstTime(token, filePath);
+        boardOperationService.recordBinFileToBoardForTheFirstTime(token, filePath);
         return ResultVO.ok("成功");
       } catch (Exception e) {
         e.printStackTrace();
@@ -67,17 +67,17 @@ public class SysFileController extends BaseController<SysFileService, SysFile> {
     } else return ResultVO.error("文件格式不对");
   }
 
-  //解冻时恢复bit
-  @ApiOperation("解冻时恢复bit")
-  @PostMapping("/reloadBitFile")
-  public ResultVO reloadBitFile(HttpServletRequest request) throws Exception{
+  //解冻时恢复bin
+  @ApiOperation("解冻时恢复bin文件")
+  @PostMapping("/reloadBinFile")
+  public ResultVO reloadBinFile(HttpServletRequest request) throws Exception{
     String token = request.getHeader("token");
-    String filePath = CommonParams.getFullBitFilePath(token);
+    String filePath = CommonParams.getFullBinFilePath(token);
     if(FileUtil.exist(filePath)){
-      boardOperationService.recordBitFileToBoardForTheFirstTime(token, filePath);
+      boardOperationService.recordBinFileToBoardForTheFirstTime(token, filePath);
       return ResultVO.ok("成功");
     }
-    else return ResultVO.error("找不到服务器上的bit文件");
+    else return ResultVO.error("找不到服务器上的bin文件");
   }
 
   //保存文件

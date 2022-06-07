@@ -106,7 +106,7 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             String reg = "^[0-9A-Fa-f]{4}$";
             if (long_id.matches(reg) && long_id.length() == 4) {
                 updateMap(ctx, socketAddress, long_id);
-                // SendMessageToCB.recordBitOnCB(ctx, socketAddress, "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-fpga-backend\\hdu\\upload\\led.bin", 0);
+                // SendMessageToCB.recordBinOnCB(ctx, socketAddress, "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-fpga-backend\\hdu\\upload\\led.bin", 0);
             } //else System.out.println("电路板longId为" + long_id + " 格式不对，被拒绝更新");
         }
 
@@ -118,12 +118,12 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
 
             HashMap<String, Object> info = NettySocketHolder.getInfo(long_id);
-            // count是 发送数据的次数 bit文件烧录时转byte
+            // count是 发送数据的次数 Bin文件烧录时转byte
             int count = (int) info.get("count");
             // System.out.println("count: " + count + 1);
             String filepath = (String) info.get("filePath");
             System.out.println("filepath：" + filepath);
-            SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, count + 1);
+            SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, count + 1);
             NettySocketHolder.getInfo(long_id).put("count", count + 1);
 
         }
@@ -193,7 +193,7 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
 
             HashMap<String, Object> info = NettySocketHolder.getInfo(long_id);
-            // count是 发送数据的次数 bit文件烧录时转byte
+            // count是 发送数据的次数 Bin文件烧录时转byte
             int count = (int) info.get("count");
             // System.out.println("count: " + count);
             String filepath = (String) info.get("filePath");
@@ -202,20 +202,20 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             // count 初始为 1
             switch (flag) {
                 case "Size":
-                    SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, 2);
+                    SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, 2);
                     NettySocketHolder.getInfo(long_id).put("count", 3);
                     break;
                 // case "MD5":
-                //     SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, 2);
+                //     SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, 2);
                 //     NettySocketHolder.getInfo(long_id).put("count", 3);
                 //     break;
                 case "File":
-                    SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, count);
+                    SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, count);
                     NettySocketHolder.getInfo(long_id).put("count", count + 1);
                     break;
                 case "undone":
                     // String c = msg.split("#")[3];
-                    // SendMessageToCB.recordBitOnCB(ctx, socketAddress, filepath, Integer.parseInt(c));
+                    // SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, Integer.parseInt(c));
                     break;
                 case "Over":
                     System.out.println("------------------板卡烧录完毕----------------");
@@ -281,8 +281,8 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         info.put("nixieTubeStatus", "");
         info.put("longId", long_id);
         // 之后要删除
-        info.put("count", 1);
-        info.put("filePath", "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-fpga-backend\\hdu\\upload\\udpled.bin");
+        // info.put("count", 1);
+        // info.put("filePath", "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-stm32-backend\\hdu\\upload\\udpled.bin");
         return info;
     }
 

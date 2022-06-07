@@ -19,6 +19,6 @@ public interface BoardOperationService {
   //还原场景到新板卡
   boolean reloadEnv(String userInfo, String longId);
 
-  //往板卡中第一次烧录bit文件片段
-  void recordBitFileToBoardForTheFirstTime(String token, String filePath);
+  //往板卡中第一次烧录bin文件片段
+  void recordBinFileToBoardForTheFirstTime(String token, String filePath);
 }

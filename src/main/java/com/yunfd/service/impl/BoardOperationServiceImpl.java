@@ -75,17 +75,17 @@ public class BoardOperationServiceImpl implements BoardOperationService {
     @Override
     public void clearSteps(String userInfo) {
         FileUtil.del(CommonParams.getFullPath(userInfo));
-        FileUtil.del(CommonParams.getFullBitFilePath(userInfo));
+        FileUtil.del(CommonParams.getFullBinFilePath(userInfo));
         log.info("已清空用户文件信息");
     }
 
     @Override
     public boolean reloadEnv(String userInfo, String longId) {
-        if (FileUtil.exist(CommonParams.getFullBitFilePath(userInfo))) {
+        if (FileUtil.exist(CommonParams.getFullBinFilePath(userInfo))) {
             HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
             ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
 
-            String filePath = CommonParams.getFullBitFilePath(userInfo);
+            String filePath = CommonParams.getFullBinFilePath(userInfo);
 
             info.put("isRecorded", "0");
             info.put("count", 0);
@@ -98,14 +98,14 @@ public class BoardOperationServiceImpl implements BoardOperationService {
             InetSocketAddress socketAddress = new InetSocketAddress(ip, port);
 
             //烧录
-            SendMessageToCB.recordBitOnCB(ctx, socketAddress, filePath, 0);
+            SendMessageToCB.recordBinOnCB(ctx, socketAddress, filePath, 0);
             return true;
         }
         return false;
     }
 
     @Override
-    public void recordBitFileToBoardForTheFirstTime(String token, String filePath) {
+    public void recordBinFileToBoardForTheFirstTime(String token, String filePath) {
         Object o = redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token);
         UserConnectionVo vo = Convert.convert(UserConnectionVo.class, o);
         String longId = vo.getLongId();
@@ -114,7 +114,8 @@ public class BoardOperationServiceImpl implements BoardOperationService {
             ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
             HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
             info.put("isRecorded", "0");
-            info.put("count", 0);
+            // info.put("count", 0);
+            info.put("count", 1);
             info.put("filePath", filePath);
             NettySocketHolder.put(longId, info);
             log.info("instance:  " + NettySocketHolder.getInfo(longId));
@@ -123,7 +124,7 @@ public class BoardOperationServiceImpl implements BoardOperationService {
             int port = (int)info.get("port");
             InetSocketAddress socketAddress = new InetSocketAddress(ip, port);
 
-            SendMessageToCB.recordBitOnCB(ctx, socketAddress, filePath, 0);
+            SendMessageToCB.recordBinOnCB(ctx, socketAddress, filePath, 1);
 
         }
     }
