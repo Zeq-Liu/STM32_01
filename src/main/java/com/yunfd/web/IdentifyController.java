@@ -18,7 +18,10 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * @author Barry
+ * @Description
+ * @Author LiuZequan
+ * @Date 2022/6/1 10:25
+ * @Version 1.0
  */
 
 @RestController
