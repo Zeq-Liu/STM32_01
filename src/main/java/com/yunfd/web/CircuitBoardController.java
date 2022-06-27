@@ -17,7 +17,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.InetSocketAddress;
 import java.util.*;
+
+import static com.yunfd.util.core.SendMessageToCB.sendInitToCB;
 
 /**
  * @Description
@@ -130,19 +133,17 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     /**
      * 接受按钮状态，并发送灯状态，实时保存操作到文件中
      *
-     * @param switchButtonStatus
-     * @param tapButtonStatus
+     * @param buttonStatus
      * @return
      */
-    @ApiOperation(value = "接受按钮状态，并发送灯状态", notes = "接受按钮状态，并发送灯状态")
+    @ApiOperation(value = "接受前端按钮并发送到板卡", notes = "接受前端按钮并发送到板卡")
     @PostMapping("/sendButtonString")
-    public ResultVO sendButtonString(HttpServletRequest request, @RequestParam("switchButtonStatus") String
-            switchButtonStatus, @RequestParam("tapButtonStatus") String tapButtonStatus) {
+    public ResultVO sendButtonString(HttpServletRequest request, @RequestParam("buttonStatus") String buttonStatus) {
         String token = request.getHeader("token");
         UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
         String longId = connectionVo.getLongId();
 
-        String finalString = SendMessageToCB.ProcessButtonString(switchButtonStatus, tapButtonStatus);
+        String finalString = SendMessageToCB.ProcessButtonString(buttonStatus);
 
         //按钮字符串存入Map
         HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
@@ -151,7 +152,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         //更新操作计时器 plus:烧录文件也应该要更新计时器
         redisUtils.set(CommonParams.REDIS_OP_TTL_PREFIX + token, true, CommonParams.REDIS_OP_TTL_LIMIT);
 
-        //要在bit文件烧录完成后才能传输
+        //要在bin文件烧录完成后才能传输
         if (NettySocketHolder.getInfo(longId).get("isRecorded").toString().equals("1")) {
             //发送按钮状态
             SendMessageToCB.sendButtonStringToCB(NettySocketHolder.getInstance().getCtx(longId), NettySocketHolder.getInstance().getSocketAddress(longId), finalString);
@@ -163,7 +164,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
             log.info("按钮状态已发送！");
             return ResultVO.ok("按钮状态已发送！");
         } else {
-            return ResultVO.error("bit文件没有烧录好！");
+            return ResultVO.error("bin文件没有烧录好！");
         }
     }
 
@@ -176,6 +177,8 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         String token = request.getHeader("token");
         UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
         String longId = connectionVo.getLongId();
+        // 打印id
+        System.out.println("longId: " + longId);
         try {
             String nixieTubeString = NettySocketHolder.getInfo(longId).get("nixieTubeStatus").toString();
             return ResultVO.ok(nixieTubeString);
@@ -193,11 +196,32 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         String token = request.getHeader("token");
         UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
         String longId = connectionVo.getLongId();
+        // 打印id
+        System.out.println("longId: " + longId);
         try {
             String lightString = NettySocketHolder.getInfo(longId).get("lightStatus").toString();
             return ResultVO.ok(lightString);
         } catch (NullPointerException e) {
             return ResultVO.error("lightStatus is null");
+        }
+    }
+
+    /**
+     * 获取 displayScreen String
+     */
+    @ApiOperation(value = "获取显示屏状态", notes = "获取显示屏状态")
+    @PostMapping("/getDisplayScreenString")
+    public ResultVO getDisplayScreenString(HttpServletRequest request) {
+        String token = request.getHeader("token");
+        UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
+        String longId = connectionVo.getLongId();
+        // 打印id
+        System.out.println("longId: " + longId);
+        try {
+            String displayScreenString = NettySocketHolder.getInfo(longId).get("displayScreen").toString();
+            return ResultVO.ok(displayScreenString);
+        } catch (NullPointerException e) {
+            return ResultVO.error("displayScreen is null");
         }
     }
 
@@ -219,39 +243,60 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         }
     }
 
+    @ApiOperation("重置板卡状态/点击reset按钮")
+    @PostMapping("/reset")
+    public ResultVO reset(HttpServletRequest request) {
+        String token = request.getHeader("token");
+        UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
+        String longId = connectionVo.getLongId();
+        try {
+            ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
+            HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
+            String ip = (String) info.get("ip");
+            int port = (int)info.get("port");
+            InetSocketAddress socketAddress = new InetSocketAddress(ip, port);
+
+            sendInitToCB(ctx, socketAddress);
+
+            return ResultVO.ok("状态重置已完成");
+        } catch (NullPointerException e) {
+            return ResultVO.error("状态重置失败");
+        }
+    }
+
     /**
      * 主动载入操作过的记录
      */
-    @ApiOperation("主动载入操作过的记录")
-    @PostMapping("/loadHistory")
-    public ResultVO loadHistory(HttpServletRequest request, @RequestParam("tag") String tag) {
-        String token = request.getHeader("token");
-
-        if (tag.equals("0")) {
-            //不载入历史，直接清空记录
-            boardOperationService.clearSteps(token);
-            return ResultVO.ok("初始化成功");
-        } else if (tag.equals("1")) {
-            //此前，用户需先调用烧录板卡的方法!!!
-            //载入历史
-            UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
-            String longId = connectionVo.getLongId();
-            ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
-            try {
-                List<String> steps = boardOperationService.readSteps(token);
-                for (String step : steps) {
-                    //刷新一下操作计时器
-                    redisUtils.set(CommonParams.REDIS_TTL_PREFIX + token, true, CommonParams.REDIS_TTL_LIMIT);
-                    //传送步骤到board上面
-                    SendMessageToCB.sendButtonStringToCB(ctx, NettySocketHolder.getInstance().getSocketAddress(longId), step);
-                }
-                return ResultVO.ok("载入成功");
-            } catch (NullPointerException e) {
-                return ResultVO.error("buttonStatus is null");
-            }
-        }
-        return ResultVO.error();
-    }
+    // @ApiOperation("主动载入操作过的记录")
+    // @PostMapping("/loadHistory")
+    // public ResultVO loadHistory(HttpServletRequest request, @RequestParam("tag") String tag) {
+    //     String token = request.getHeader("token");
+    //
+    //     if (tag.equals("0")) {
+    //         //不载入历史，直接清空记录
+    //         boardOperationService.clearSteps(token);
+    //         return ResultVO.ok("初始化成功");
+    //     } else if (tag.equals("1")) {
+    //         //此前，用户需先调用烧录板卡的方法!!!
+    //         //载入历史
+    //         UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
+    //         String longId = connectionVo.getLongId();
+    //         ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
+    //         try {
+    //             List<String> steps = boardOperationService.readSteps(token);
+    //             for (String step : steps) {
+    //                 //刷新一下操作计时器
+    //                 redisUtils.set(CommonParams.REDIS_TTL_PREFIX + token, true, CommonParams.REDIS_TTL_LIMIT);
+    //                 //传送步骤到board上面
+    //                 SendMessageToCB.sendButtonStringToCB(ctx, NettySocketHolder.getInstance().getSocketAddress(longId), step);
+    //             }
+    //             return ResultVO.ok("载入成功");
+    //         } catch (NullPointerException e) {
+    //             return ResultVO.error("buttonStatus is null");
+    //         }
+    //     }
+    //     return ResultVO.error();
+    // }
 
   /*
   TODO 仅供测试

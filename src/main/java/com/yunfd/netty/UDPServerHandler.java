@@ -1,5 +1,6 @@
 package com.yunfd.netty;
 
+import cn.hutool.core.lang.Validator;
 import cn.hutool.core.util.StrUtil;
 import com.yunfd.config.CommonParams;
 import com.yunfd.domain.CircuitBoard;
@@ -25,7 +26,7 @@ import java.util.HashMap;
  * @Description
  * @Author LiuZequan
  * @Date 2022/4/13 11:32
- * @Version 2.0
+ * @Version 3.5
  */
 
 
@@ -57,9 +58,6 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         // 分析数据报包，获取板卡IP地址与端口
         InetSocketAddress socketAddress = datagramPacket.sender();
         String ip = socketAddress.getAddress().getHostAddress();
-        // int port = socketAddress.getPort();
-        // System.out.println("板卡的IP地址为：" + ip + "，PORT端口：" + port);
-        //System.out.println("板卡网络地址：" + socketAddress);
 
         // 分析数据报包，拿到其中携带的消息
         ByteBuf byteBuf = datagramPacket.content();
@@ -98,47 +96,47 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         }
         // 心跳包
         if (msg.contains("Heartbeat")) {// heart...#XXXX#
-            String[] heartbeats = msg.split("Heartbeat");
-            String long_id = heartbeats[1].split("#")[1];
+            // String[] heartbeats = msg.split("Heartbeat");
+            // String long_id = heartbeats[1].split("#")[1];
+            String long_id = msg.split("#")[1];
             //刷新板卡和服务器的连接倒计时
             redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
             //System.out.println("心跳包: 来自long_id: " + long_id + " ip: " + ip);
             String reg = "^[0-9A-Fa-f]{4}$";
             if (long_id.matches(reg) && long_id.length() == 4) {
                 updateMap(ctx, socketAddress, long_id);
-                // SendMessageToCB.recordBinOnCB(ctx, socketAddress, "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-fpga-backend\\hdu\\upload\\led.bin", 0);
-            } //else System.out.println("电路板longId为" + long_id + " 格式不对，被拒绝更新");
+            } else System.out.println("电路板longId为" + long_id + " 格式不对，被拒绝更新");
         }
 
         // 烧录过程
-        if (msg.contains("OK")) {
-            String long_id = (msg.split("#"))[1];
-            System.out.println("LongId：" + long_id);
-            //刷新板卡和服务器的连接倒计时
-            redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
-
-            HashMap<String, Object> info = NettySocketHolder.getInfo(long_id);
-            // count是 发送数据的次数 Bin文件烧录时转byte
-            int count = (int) info.get("count");
-            // System.out.println("count: " + count + 1);
-            String filepath = (String) info.get("filePath");
-            System.out.println("filepath：" + filepath);
-            SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, count + 1);
-            NettySocketHolder.getInfo(long_id).put("count", count + 1);
-
-        }
+        // if (msg.contains("OK")) {
+        //     String long_id = (msg.split("#"))[1];
+        //     System.out.println("LongId：" + long_id);
+        //     //刷新板卡和服务器的连接倒计时
+        //     redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
+        //
+        //     HashMap<String, Object> info = NettySocketHolder.getInfo(long_id);
+        //     // count是 发送数据的次数 Bin文件烧录时转byte
+        //     int count = (int) info.get("count");
+        //     // System.out.println("count: " + count + 1);
+        //     String filepath = (String) info.get("filePath");
+        //     System.out.println("filepath：" + filepath);
+        //     SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, count + 1);
+        //     NettySocketHolder.getInfo(long_id).put("count", count + 1);
+        //
+        // }
 
         // 烧录成功  置 map 中 isRecorded 为 1
-        if (msg.contains("END")) {
-            String long_id = (msg.split("#"))[1];
-            //刷新板卡和服务器的连接倒计时
-            redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
-            HashMap<String, Object> newInfo = NettySocketHolder.getInfo(long_id);
-            newInfo.put("isRecorded", "1");
-            NettySocketHolder.put(long_id, newInfo);
-            //这里没有更新MySQL
-            log.info("已更新烧录状态！ ID: " + long_id + "; isRecorded: 1");
-        }
+        // if (msg.contains("END")) {
+        //     String long_id = (msg.split("#"))[1];
+        //     //刷新板卡和服务器的连接倒计时
+        //     redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
+        //     HashMap<String, Object> newInfo = NettySocketHolder.getInfo(long_id);
+        //     newInfo.put("isRecorded", "1");
+        //     NettySocketHolder.put(long_id, newInfo);
+        //     //这里没有更新MySQL
+        //     log.info("已更新烧录状态！ ID: " + long_id + "; isRecorded: 1");
+        // }
 
         // // 收到关闭链路消息
         // if (msg.contains("Bye")) {
@@ -151,38 +149,34 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         // }
 
         // 运行成功  置 map 中 lightStatus 为 lightStatus
-        if (msg.contains("STAT")) { // SIG
+        if (msg.contains("STAT")) {
             String long_id = circuitBoardService.findByCBIP(ip).getLongId();
-            String[] stats = msg.split("STAT");
-            String[] str = stats[1].split("#");
+            String[] str = msg.split("#");
 
-            // keypoint 旧板子
             if (str[1].length() == 8) {
-                String lightString = str[1];
-                log.info("lightString:   " + lightString);
+                String lightString = str[1].substring(0,4);
+                String nixieTubeString= str[1].substring(4,8);
+                System.out.println("lightString:   " + lightString);
+                System.out.println("nixieTubeString:   " + nixieTubeString);
                 HashMap<String, Object> newInfo = NettySocketHolder.getInfo(long_id);
                 newInfo.put("lightStatus", lightString);
-                newInfo.put("nixieTubeStatus", "");
+                newInfo.put("nixieTubeStatus", nixieTubeString);
                 NettySocketHolder.put(long_id, newInfo);
+                log.info("已更新lightStatus与nixieTubeStatus！long_id: " + long_id + "; status: " + str[1]);
             }
-            // keypoint 新板子 2021
-            else if (str[1].length() == 18) {
-                String lightString = str[1].substring(0, 8);
-                String nixieTubeString = str[1].substring(8, 16);
-                // 接收到的数码管信息为是反的，需要翻转
-                String nixieTubeStringReversed = StrUtil.reverse(nixieTubeString);
+            if (Validator.isNotNull(str[2])) {
+                String screenString = str[2];
+                System.out.println("screenString:   " + screenString);
+                HashMap<String, Object> newInfo = NettySocketHolder.getInfo(long_id);
+                newInfo.put("screenStatus", screenString);
+                NettySocketHolder.put(long_id, newInfo);
+                log.info("已更新screenStatus！long_id: " + long_id + "; status: " + str[2]);
+            }
 
-                log.info(long_id + "  lightString: " + lightString + "  ,nixieTubeString: " + nixieTubeStringReversed);
-                HashMap<String, Object> newInfo = NettySocketHolder.getInfo(long_id);
-                newInfo.put("lightStatus", lightString);
-                newInfo.put("nixieTubeStatus", nixieTubeStringReversed);
-                NettySocketHolder.put(long_id, newInfo);
-            }
-            log.info("已更新light状态！ID: " + long_id + "; status: " + str[1]);
+
         }
 
         if (msg.contains("Success")) {
-            // SendMessageToCB.backtrack = msg.split("Success")[1];
             String flag = msg.split("#")[1];
             System.out.println("flag：" + flag);
 
@@ -205,10 +199,6 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
                     SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, 2);
                     NettySocketHolder.getInfo(long_id).put("count", 3);
                     break;
-                // case "MD5":
-                //     SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, 2);
-                //     NettySocketHolder.getInfo(long_id).put("count", 3);
-                //     break;
                 case "File":
                     SendMessageToCB.recordBinOnCB(ctx, socketAddress, filepath, count);
                     NettySocketHolder.getInfo(long_id).put("count", count + 1);
@@ -219,18 +209,15 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
                     break;
                 case "Over":
                     System.out.println("------------------板卡烧录完毕----------------");
+                    redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
+                    HashMap<String, Object> newInfo = NettySocketHolder.getInfo(long_id);
+                    newInfo.put("isRecorded", "1");
+                    NettySocketHolder.put(long_id, newInfo);
+                    System.out.println("已更新烧录状态！long_id：" + long_id + "；isRecorded：1");
                     break;
             }
 
         }
-
-
-        // if (msg.contains("Over")){
-        //     String long_id = msg.split("#")[1];
-        //     System.out.println("long_id：" + long_id);
-        //     System.out.println("--------------------------------------------------");
-        //
-        // }
     }
 
     @Override
@@ -239,24 +226,25 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         System.out.println("UDP通道已经连通");
     }
 
-    // 失去连接的动作
-    // @Override
-    // public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-    //     super.channelInactive(ctx);
-    //     // 移除MAP和DB里的这个连接
-    //     String IP = (ctx.channel().remoteAddress().toString().split("/"))[1];
-    //     CircuitBoard circuitBoard = circuitBoardService.findByCBIP(IP);
-    //     if (Validator.isNotNull(circuitBoard)) {
-    //         String longId = circuitBoard.getLongId();
-    //         NettySocketHolder.remove(longId);
-    //         redisUtils.del(CommonParams.REDIS_BOARD_SERVER_PREFIX + longId);
-    //         circuitBoardService.deleteById(circuitBoard);
-    //         log.error("板卡" + longId + "失去连接，已从map和db中移除");
-    //     }
-    //     // 链路关闭
-    //     ctx.channel().close();
-    //     log.error("Channel is disconnected");
-    // }
+    // 失去连接的动作，移除mysql、redis和map中的信息
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        super.channelInactive(ctx);
+        // 移除MAP和DB里的这个连接
+        String longId0 = NettySocketHolder.getLongId(ctx);
+        String IP = NettySocketHolder.getSocketAddress(longId0).getAddress().getHostAddress();
+        CircuitBoard circuitBoard = circuitBoardService.findByCBIP(IP);
+        if (Validator.isNotNull(circuitBoard)) {
+            String longId = circuitBoard.getLongId();
+            NettySocketHolder.remove(longId);
+            redisUtils.del(CommonParams.REDIS_BOARD_SERVER_PREFIX + longId);
+            circuitBoardService.deleteById(circuitBoard);
+            System.out.println("板卡" + longId + "失去连接，已从map和db中移除");
+        }
+        // 链路关闭
+        ctx.channel().close();
+        System.out.println("Channel is disconnected");
+    }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
@@ -280,6 +268,7 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         info.put("lightStatus", "");
         info.put("nixieTubeStatus", "");
         info.put("longId", long_id);
+        info.put("screenStatus", "");
         // 之后要删除
         // info.put("count", 1);
         // info.put("filePath", "C:\\Users\\LiuZequan\\Documents\\Developer\\Java\\hdu-stm32-backend\\hdu\\upload\\udpled.bin");

@@ -88,6 +88,10 @@ public class NettySocketHolder {
         return getInstance().nettySocketHolder.get(longId);
     }
 
+    public static HashMap<String, Object> getInfo(ChannelHandlerContext ctx) {
+        return getInstance().nettySocketHolder.get(ctx);
+    }
+
 
     /**
      * 返回 ctx
@@ -101,5 +105,12 @@ public class NettySocketHolder {
      */
     public static InetSocketAddress getSocketAddress(String longId) {
         return new InetSocketAddress((String) NettySocketHolder.getInfo(longId).get("ip"), (int) NettySocketHolder.getInfo(longId).get("port"));
+    }
+
+    /**
+     * 通过 ctx 查询 longId
+     */
+    public static String getLongId(ChannelHandlerContext ctx) {
+        return (String) NettySocketHolder.getInfo(ctx).get("longId");
     }
 }
