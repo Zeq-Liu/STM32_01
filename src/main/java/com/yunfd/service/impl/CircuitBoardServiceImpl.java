@@ -75,8 +75,8 @@ public class CircuitBoardServiceImpl extends ServiceImpl<CircuitBoardMapper, Cir
   @Override
   public boolean freeCB(String token) {
     UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_SHADOW_PREFIX + token));
-    String cbIp = connectionVo.getCbIp();
-    simplyFreeCB(cbIp);
+    String cbIpPort = connectionVo.getCbIpPort();
+    simplyFreeCB(cbIpPort);
     if (Validator.isNotNull(connectionVo.getLongId())) {
 //      //更新数据库,记录时长
 //      CbUseTime time = null;

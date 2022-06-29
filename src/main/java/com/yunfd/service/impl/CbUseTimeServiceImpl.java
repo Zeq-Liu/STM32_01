@@ -31,7 +31,7 @@ public class CbUseTimeServiceImpl extends ServiceImpl<CbUseTimeMapper, CbUseTime
     CbUseTime time = new CbUseTime();
     String token = connectionVo.getToken();
     String[] info = token.split("_");
-    time.setCbIp(connectionVo.getCbIp());
+    time.setCbIpPort(connectionVo.getCbIpPort());
     time.setCbLongId(connectionVo.getLongId());
     time.setPlatformTag(info[0]);
     time.setSchoolName(info[1]);

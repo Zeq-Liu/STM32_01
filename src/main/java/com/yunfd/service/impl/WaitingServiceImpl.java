@@ -104,7 +104,7 @@ public class WaitingServiceImpl implements WaitingService {
     if (Validator.isNotNull(shadow) && Validator.isNotNull(vo) && vo.isFrozen()) {
       outOfLine(userToken); // 其实应该直接弹出头部
       vo.setFrozen(false);
-      vo.setCbIp(board.getCbIp());
+      vo.setCbIpPort(board.getCbIpPort());
       vo.setLongId(board.getLongId());
       vo.setUpdateTime(new Date());
 

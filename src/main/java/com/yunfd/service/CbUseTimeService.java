@@ -6,5 +6,5 @@ import com.yunfd.domain.vo.UserConnectionVo;
 
 public interface CbUseTimeService extends IService<CbUseTime> {
 
-  boolean saveUserUsingData(UserConnectionVo connectionVo);
+    boolean saveUserUsingData(UserConnectionVo connectionVo);
 }

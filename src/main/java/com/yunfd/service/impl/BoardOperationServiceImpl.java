@@ -93,9 +93,8 @@ public class BoardOperationServiceImpl implements BoardOperationService {
             NettySocketHolder.put(longId, info);
             log.info("instance:  " + NettySocketHolder.getInfo(longId));
 
-            String ip = (String) info.get("ip");
-            int port = (int)info.get("port");
-            InetSocketAddress socketAddress = new InetSocketAddress(ip, port);
+            String ipPort = (String) info.get("ipPort");
+            InetSocketAddress socketAddress = new InetSocketAddress(ipPort.split(":")[0], Integer.parseInt(ipPort.split(":")[1]));
 
             //烧录
             SendMessageToCB.recordBinOnCB(ctx, socketAddress, filePath, 0);
@@ -120,9 +119,8 @@ public class BoardOperationServiceImpl implements BoardOperationService {
             NettySocketHolder.put(longId, info);
             log.info("instance:  " + NettySocketHolder.getInfo(longId));
 
-            String ip = (String) info.get("ip");
-            int port = (int)info.get("port");
-            InetSocketAddress socketAddress = new InetSocketAddress(ip, port);
+            String ipPort = (String) info.get("ipPort");
+            InetSocketAddress socketAddress = new InetSocketAddress(ipPort.split(":")[0], Integer.parseInt(ipPort.split(":")[1]));
 
             SendMessageToCB.recordBinOnCB(ctx, socketAddress, filePath, 1);
 

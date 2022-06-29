@@ -38,9 +38,9 @@ public class IdentifyServiceImpl implements IdentifyService {
       UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, o);
       boolean b = cbUseTimeService.saveUserUsingData(connectionVo);
       if (b) {
-        String cbIp = connectionVo.getCbIp();
+        String cbIpPort = connectionVo.getCbIpPort();
         try {
-          circuitBoardService.simplyFreeCB(cbIp);
+          circuitBoardService.simplyFreeCB(cbIpPort);
         } catch (Exception e) {
           e.printStackTrace();
         }

@@ -37,17 +37,31 @@ public class IdentifyController {
   private IdentifyService identifyService;
 
   @PostMapping("/generateSaltAndReturnToken")
-  @ApiOperation("获取服务端授权的随机串, 将用户信息存储在redis中")
-  public ResultVO generateSaltAndReturnToken(@RequestBody UserVo userVo) {
+  @ApiOperation("获取服务端授权的随机token, 并将用户信息存储在redis中")
+  public ResultVO generateSaltAndReturnToken(HttpServletRequest request,@RequestBody UserVo userVo) {
     boolean b = CommonParams.isLegalParamsWithoutSalt(userVo);
     if (b) {
       String salt = IdUtil.simpleUUID();
       userVo.setSalt(salt);
       String token = CommonParams.generateUserToken(userVo);
       if (Validator.isNull(token)) return ResultVO.error("身份信息有误");
-      //将身份信息限时存储在redis中
-      redisUtils.set(CommonParams.REDIS_TTL_PREFIX + token, true, CommonParams.REDIS_TTL_LIMIT);
-      return ResultVO.ok(token);
+      // 无误则 将身份信息限时存储在redis中
+      boolean b_ttl = redisUtils.set(CommonParams.REDIS_TTL_PREFIX + token, true, CommonParams.REDIS_TTL_LIMIT);
+      // if (!b_ttl) {
+      //   System.out.println("未能将token成功存储到redis中");
+      //   return ResultVO.error("未能将token成功存储到redis中");
+      // }
+
+      // 生成 billid流水号 记录用户使用情况
+      String billId = IdUtil.simpleUUID();
+      //生成shadow和时间obj，保存到redis
+      boolean b_shadow = redisUtils.set(CommonParams.REDIS_CONN_SHADOW_PREFIX + token, true);
+      //生成时间对象waiting service
+      UserConnectionVo userConnectionVo = waitingService.createConnectionObj(request, token);
+      userConnectionVo.setBillId(billId);
+      boolean b_waiting = redisUtils.set(CommonParams.REDIS_CONN_PREFIX + token, userConnectionVo);
+      waitingService.waitInLine(token);
+      return b_ttl && b_shadow && b_waiting ? ResultVO.ok(token) : ResultVO.error("用户验证失败");
     }
     return ResultVO.error("身份信息有误");
   }
@@ -95,24 +109,24 @@ public class IdentifyController {
     return ResultVO.error("验证无效或身份已过期");
   }
 
-  @PostMapping("/generateBillId")
-  @ApiOperation("新用户进入平台分配流水号，用户端和redis都保存一份")
-  public ResultVO generateBillId(HttpServletRequest request) {
-    String token = request.getHeader("token");
-    if (Validator.isNull(waitingService.getNumberOfPeopleInFrontOfUser(token))) {
-      String billId = IdUtil.simpleUUID();
-      //生成shadow和时间obj，保存到redis
-      boolean b_shadow = redisUtils.set(CommonParams.REDIS_CONN_SHADOW_PREFIX + token, true);
-      //生成时间对象waiting service
-      UserConnectionVo userConnectionVo = waitingService.createConnectionObj(request, token);
-      userConnectionVo.setBillId(billId);
-      boolean b_waiting = redisUtils.set(CommonParams.REDIS_CONN_PREFIX + token, userConnectionVo);
-      waitingService.waitInLine(token);
-      return b_shadow && b_waiting ? ResultVO.ok(billId) : ResultVO.error("用户验证失败");
-    } else {
-      return ResultVO.error("已生成过billId!");
-    }
-  }
+  // @PostMapping("/generateBillId")
+  // @ApiOperation("新用户进入平台分配流水号，用户端和redis都保存一份")
+  // public ResultVO generateBillId(HttpServletRequest request) {
+  //   String token = request.getHeader("token");
+  //   if (Validator.isNull(waitingService.getNumberOfPeopleInFrontOfUser(token))) {
+  //     String billId = IdUtil.simpleUUID();
+  //     //生成shadow和时间obj，保存到redis
+  //     boolean b_shadow = redisUtils.set(CommonParams.REDIS_CONN_SHADOW_PREFIX + token, true);
+  //     //生成时间对象waiting service
+  //     UserConnectionVo userConnectionVo = waitingService.createConnectionObj(request, token);
+  //     userConnectionVo.setBillId(billId);
+  //     boolean b_waiting = redisUtils.set(CommonParams.REDIS_CONN_PREFIX + token, userConnectionVo);
+  //     waitingService.waitInLine(token);
+  //     return b_shadow && b_waiting ? ResultVO.ok(billId) : ResultVO.error("用户验证失败");
+  //   } else {
+  //     return ResultVO.error("已生成过billId!");
+  //   }
+  // }
 
   @PostMapping("/isUserValid")
   @ApiOperation("判断用户的信息是否有效")

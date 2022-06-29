@@ -57,7 +57,8 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
 
         // 分析数据报包，获取板卡IP地址与端口
         InetSocketAddress socketAddress = datagramPacket.sender();
-        String ip = socketAddress.getAddress().getHostAddress();
+        System.out.println("ip+port:" + socketAddress);
+        String ipPort = socketAddress.toString().split("/")[1];
 
         // 分析数据报包，拿到其中携带的消息
         ByteBuf byteBuf = datagramPacket.content();
@@ -67,13 +68,6 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         byteBuf.readBytes(dst);
         String msg = new String(dst);
         System.out.println("板卡消息:" + msg);
-
-        // if (new String(msg).contains("111")) {
-        //     ByteBuf bf = Unpooled.copiedBuffer("NNN", CharsetUtil.UTF_8);
-        //     ctx.writeAndFlush(new DatagramPacket(bf, socketAddress));
-        //     System.out.println("发送成功");
-        // }
-
 
         // 电路板客户端登录
         if (msg.contains("Login")) {
@@ -90,22 +84,20 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
             // 往NettySocketHolder(Map)和数据库中初始化这块电路板
             if (long_id.matches(reg) && long_id.length() == 4) {
-                insertNewTOMap(ctx, socketAddress, long_id);
-                insertNewTODataBase(ctx, socketAddress, long_id);
+                insertNewTOMap(ctx, ipPort, long_id);
+                insertNewTODataBase(ipPort, long_id);
             } else System.out.println("电路板longId为" + long_id + " 格式不对，被拒绝加入map和DB");
         }
-        // 心跳包
-        if (msg.contains("Heartbeat")) {// heart...#XXXX#
-            // String[] heartbeats = msg.split("Heartbeat");
-            // String long_id = heartbeats[1].split("#")[1];
+        // 心跳包 heart...#XXXX#
+        if (msg.contains("Heartbeat")) {
             String long_id = msg.split("#")[1];
             //刷新板卡和服务器的连接倒计时
             redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
             //System.out.println("心跳包: 来自long_id: " + long_id + " ip: " + ip);
             String reg = "^[0-9A-Fa-f]{4}$";
             if (long_id.matches(reg) && long_id.length() == 4) {
-                updateMap(ctx, socketAddress, long_id);
-            } else System.out.println("电路板longId为" + long_id + " 格式不对，被拒绝更新");
+                updateMap(ctx, ipPort, long_id);
+            } else System.out.println("电路板longId：" + long_id + "，格式不对，被拒绝更新");
         }
 
         // 烧录过程
@@ -150,12 +142,12 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
 
         // 运行成功  置 map 中 lightStatus 为 lightStatus
         if (msg.contains("STAT")) {
-            String long_id = circuitBoardService.findByCBIP(ip).getLongId();
+            String long_id = circuitBoardService.findByCBIP(ipPort).getLongId();
             String[] str = msg.split("#");
 
             if (str[1].length() == 8) {
-                String lightString = str[1].substring(0,4);
-                String nixieTubeString= str[1].substring(4,8);
+                String lightString = str[1].substring(0, 4);
+                String nixieTubeString = str[1].substring(4, 8);
                 System.out.println("lightString:   " + lightString);
                 System.out.println("nixieTubeString:   " + nixieTubeString);
                 HashMap<String, Object> newInfo = NettySocketHolder.getInfo(long_id);
@@ -232,8 +224,8 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         super.channelInactive(ctx);
         // 移除MAP和DB里的这个连接
         String longId0 = NettySocketHolder.getLongId(ctx);
-        String IP = NettySocketHolder.getSocketAddress(longId0).getAddress().getHostAddress();
-        CircuitBoard circuitBoard = circuitBoardService.findByCBIP(IP);
+        String ipPort = NettySocketHolder.getSocketAddress(longId0).toString().split("/")[1];
+        CircuitBoard circuitBoard = circuitBoardService.findByCBIP(ipPort);
         if (Validator.isNotNull(circuitBoard)) {
             String longId = circuitBoard.getLongId();
             NettySocketHolder.remove(longId);
@@ -256,11 +248,10 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
     /*************************************处理Map和DB***************************************/
 
     //初始化以及更新NettySocketHolder(Map)和数据库中的电路板记录(仅当电路板Login时)
-    private HashMap<String, Object> initMap(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String long_id) {
+    private HashMap<String, Object> initMap(ChannelHandlerContext ctx, String ipPort, String long_id) {
         HashMap<String, Object> info = new HashMap<>();
-
-        info.put("ip", socketAddress.getAddress().getHostAddress());
-        info.put("port", socketAddress.getPort());
+        // map 后面更新进redis
+        info.put("ipPort", ipPort);
         info.put("ctx", ctx);
         info.put("status", "0");
         info.put("isRecorded", "0");
@@ -275,76 +266,70 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         return info;
     }
 
-    private CircuitBoard initCBDBObj(String longId, InetSocketAddress socketAddress) {
+    private CircuitBoard initCBDBObj(String longId, String ipPort) {
         CircuitBoard board = new CircuitBoard();
         board.setLongId(longId);
-        board.setCbIp(socketAddress.getAddress().getHostAddress());
-        board.setCbPort(socketAddress.getPort());
+        board.setCbIpPort(ipPort);
         board.setStatus("0");
         board.setIsRecorded("0");
-        board.setLightStatus("");
-        board.setSwitchButtonStatus("");
+
         return board;
     }
 
-    private void initCBDBObjWithIdKnown(String longId, InetSocketAddress socketAddress, CircuitBoard board) {
+    private void initCBDBObjWithIdKnown(String longId, String ipPort, CircuitBoard board) {
         board.setLongId(longId);
-        board.setCbIp(socketAddress.getAddress().getHostAddress());
-        board.setCbPort(socketAddress.getPort());
+        board.setCbIpPort(ipPort);
         board.setStatus("0");
         board.setIsRecorded("0");
-        board.setLightStatus("");
-        board.setSwitchButtonStatus("");
     }
 
-    private void insertNewTOMap(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String long_id) {
+    private void insertNewTOMap(ChannelHandlerContext ctx, String ipPort, String long_id) {
         //新的电路板信息
-        HashMap<String, Object> info = initMap(ctx, socketAddress, long_id);
+        HashMap<String, Object> info = initMap(ctx, ipPort, long_id);
         // keypoint 根据 long_id 去 map 中找，如果找到了，map 更新，所有状态复原； 如果没找到，在 map 中添加。
         // 内容加入单例 Map  long_id : info
         if (NettySocketHolder.getInfo(long_id) != null)
-            log.info("map中已有 " + long_id + " ，更新map");
+            System.out.println("map中已有板卡 " + long_id + " ，更新map");
         else
-            log.info("添加新 CB 到 map！ longId: " + long_id + " remoteAddress : " + socketAddress);
+            System.out.println("添加新板卡到 map！ longId: " + long_id + " ipPort: " + ipPort);
         NettySocketHolder.getInstance().put(long_id, info);
     }
 
-    private void insertNewTODataBase(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String longId) {
+    private void insertNewTODataBase(String ipPort, String longId) {
         // 根据 longId 去数据库中找，如果找到了，数据库更新，所有状态复原； 如果没找到，在数据库中添加。
-
-        // 更新数据库
         CircuitBoard circuitBoard = circuitBoardService.findByCBID(longId);
+        // 更新数据库
         if (circuitBoard != null) {
-            initCBDBObjWithIdKnown(longId, socketAddress, circuitBoard);
+            initCBDBObjWithIdKnown(longId, ipPort, circuitBoard);
             circuitBoardService.updateById(circuitBoard);
-            log.info("数据库更新了" + longId + "！");
+            log.info("数据库对longId为" + longId + "的板卡进行了更新！");
         } else {
             //向数据库中添加这个电路板
-            CircuitBoard obj = initCBDBObj(longId, socketAddress);
+            CircuitBoard obj = initCBDBObj(longId, ipPort);
             circuitBoardService.insert(obj);
-            log.info("添加新CB 到 DB！longId: " + longId);
+            log.info("添加新板卡到数据库！longId为: " + longId);
         }
     }
 
     //更新NettySocketHolder(Map)和数据库中的电路板记录(其他时候)
-    private void updateMap(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String long_id) {
+    private void updateMap(ChannelHandlerContext ctx, String ipPort, String long_id) {
         // 根据 long_id 去 map 中找，如果没找到，在 map 中添加。
         if (NettySocketHolder.getInfo(long_id) == null) {
-            HashMap<String, Object> info = initMap(ctx, socketAddress, long_id);
+            HashMap<String, Object> info = initMap(ctx, ipPort, long_id);
             //内容加入单例 Map
-            updateDataBase(ctx, socketAddress, long_id);
+            updateDataBase(ipPort, long_id);
             NettySocketHolder.getInstance().put(long_id, info);
-            log.info("添加新 CB 到 map！ longId: " + long_id + " IP : " + socketAddress.getAddress().getHostAddress());
+            System.out.println("添加新板卡到 map！ longId: " + long_id + " ipPort: " + ipPort);
         }
     }
 
-    private void updateDataBase(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String longId) {
+    private void updateDataBase(String ipPort, String longId) {
         // 根据 longId 去数据库中找，如果找到了，数据库更新，所有状态复原； 如果没找到，在数据库中添加。
         // 更新数据库
         CircuitBoard circuitBoard = circuitBoardService.findByCBID(longId);
         if (circuitBoard == null) {
             //向数据库中添加这个电路板
-            insertNewTODataBase(ctx, socketAddress, longId);
+            insertNewTODataBase(ipPort, longId);
         }
     }
 }

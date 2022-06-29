@@ -21,6 +21,6 @@ public class UserConnectionVo {
   //操作流水号，用于记录用户的使用情况
   private String billId;
   private String userIp;
-  private String cbIp;
+  private String cbIpPort;
   private String longId;
 }
