@@ -3,8 +3,13 @@ package com.yunfd.web.vo;
 import java.io.Serializable;
 
 /**
- * @Author yunfd
+ * 状态码设置：
+ * code: 0 1 2
+ * 0：成功
+ * 1：已知错误
+ * 2：未知错误
  */
+
 public class ResultVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -39,11 +44,11 @@ public class ResultVO implements Serializable {
     }
 
     public static ResultVO error() {
-        return error(500, "未知异常，请联系管理员");
+        return error(2, "未知异常，请联系管理员");
     }
 
     public static ResultVO error(String msg) {
-        return error(500, msg);
+        return error(1, msg);
     }
 
     public static ResultVO error(Integer code, String msg) {

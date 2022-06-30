@@ -67,27 +67,42 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     /**
      * 查询电路板是否已烧录
      */
-    @ApiOperation("查询电路板是否已烧录")
-    @PostMapping("/getRecordedStatus")
-    public ResultVO getRecordedStatus(HttpServletRequest request, @RequestParam("cbIp") String cbIp) {
-        CircuitBoard board = null;
-        try {
-            board = circuitBoardService.selectOne(new EntityWrapper<CircuitBoard>().eq("cb_ip", cbIp));
+    @ApiOperation("查询电路板是否已烧录,可用longId 也可用ipPort，他们都是唯一的")
+    @PostMapping("/getRecordedStatusByLongId")
+    public ResultVO getRecordedStatusByLongId(@RequestParam("longId") String longId) {
+        CircuitBoard board;
 
-            assert board != null;
+        board = circuitBoardService.selectOne(new EntityWrapper<CircuitBoard>().eq("long_id", longId));
 
-            if (!NettySocketHolder.getInfo(board.getLongId()).get("isRecorded").toString().equals("")) {
-                String result = NettySocketHolder.getInfo(board.getLongId()).get("isRecorded").toString();
-                log.info("isRecorded not null:  isRecorded: " + result);
-                return ResultVO.ok(result);
-            } else {
-                return ResultVO.error("isRecorded为空");
-            }
-        } catch (Exception e) {
-            System.out.println("error!");// 没有这个 Instance
-            return ResultVO.error("没有这个板子");
+        if (board == null) return ResultVO.error("没有这个板子");
+
+        if (!NettySocketHolder.getInfo(board.getLongId()).get("isRecorded").toString().equals("")) {
+            String result = NettySocketHolder.getInfo(board.getLongId()).get("isRecorded").toString();
+            log.info("isRecorded not null:  isRecorded: " + result);
+            return ResultVO.ok(result);
+        } else {
+            return ResultVO.error("isRecorded为空");
         }
     }
+
+    @ApiOperation("查询电路板是否已烧录,可用longId 也可用ipPort，他们都是唯一的")
+    @PostMapping("/getRecordedStatusByCbIpPort")
+    public ResultVO getRecordedStatusByCbIpPort(@RequestParam("cbIpPort") String cbIpPort) {
+        CircuitBoard board;
+
+        board = circuitBoardService.selectOne(new EntityWrapper<CircuitBoard>().eq("cb_ip_port", cbIpPort));
+
+        if (board == null) return ResultVO.error("没有这个板子");
+
+        if (!NettySocketHolder.getInfo(board.getLongId()).get("isRecorded").toString().equals("")) {
+            String result = NettySocketHolder.getInfo(board.getLongId()).get("isRecorded").toString();
+            log.info("isRecorded not null:  isRecorded: " + result);
+            return ResultVO.ok(result);
+        } else {
+            return ResultVO.error("isRecorded为空");
+        }
+    }
+
 
     //
     //  /**
@@ -136,18 +151,19 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
      * @param buttonStatus
      * @return
      */
-    @ApiOperation(value = "接受前端按钮并发送到板卡", notes = "接受前端按钮并发送到板卡")
+    @ApiOperation("前端发送16位按钮状态键串，要求：需发送16个按键被点击的状态，0表示未点击过，1表示点击过，按板卡从左到右，上到下的顺序")
     @PostMapping("/sendButtonString")
     public ResultVO sendButtonString(HttpServletRequest request, @RequestParam("buttonStatus") String buttonStatus) {
         String token = request.getHeader("token");
         UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
         String longId = connectionVo.getLongId();
 
-        String finalString = SendMessageToCB.ProcessButtonString(buttonStatus);
+        System.out.println("buttonStatus " + buttonStatus);
 
+        // String finalString = SendMessageToCB.ProcessButtonString(buttonStatus);
         //按钮字符串存入Map
         HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
-        info.replace("buttonStatus", finalString);
+        info.replace("buttonStatus", buttonStatus);
 
         //更新操作计时器 plus:烧录文件也应该要更新计时器
         redisUtils.set(CommonParams.REDIS_OP_TTL_PREFIX + token, true, CommonParams.REDIS_OP_TTL_LIMIT);
@@ -155,11 +171,11 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         //要在bin文件烧录完成后才能传输
         if (NettySocketHolder.getInfo(longId).get("isRecorded").toString().equals("1")) {
             //发送按钮状态
-            SendMessageToCB.sendButtonStringToCB(NettySocketHolder.getInstance().getCtx(longId), NettySocketHolder.getInstance().getSocketAddress(longId), finalString);
+            SendMessageToCB.sendButtonStringToCB(NettySocketHolder.getInstance().getCtx(longId), NettySocketHolder.getInstance().getSocketAddress(longId), buttonStatus);
 
             //按钮字符串存入服务器指定位置
             //追加处理过的字符串
-            boardOperationService.appendAStepToList(token, finalString);
+            boardOperationService.appendAStepToList(token, buttonStatus);
 
             log.info("按钮状态已发送！");
             return ResultVO.ok("按钮状态已发送！");
@@ -171,7 +187,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     /**
      * 获取 NixieTube String
      */
-    @ApiOperation(value = "获取数码管状态", notes = "获取数码管状态")
+    @ApiOperation("获取数码管状态")
     @PostMapping("/getNixieTubeString")
     public ResultVO getNixieTubeString(HttpServletRequest request) {
         String token = request.getHeader("token");
@@ -190,7 +206,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     /**
      * 获取 Light String
      */
-    @ApiOperation(value = "获取LED状态", notes = "获取LED状态")
+    @ApiOperation("获取LED状态")
     @PostMapping("/getLightString")
     public ResultVO getLightString(HttpServletRequest request) {
         String token = request.getHeader("token");
@@ -209,7 +225,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     /**
      * 获取 displayScreen String
      */
-    @ApiOperation(value = "获取显示屏状态", notes = "获取显示屏状态")
+    @ApiOperation("获取显示屏状态")
     @PostMapping("/getDisplayScreenString")
     public ResultVO getDisplayScreenString(HttpServletRequest request) {
         String token = request.getHeader("token");
@@ -229,8 +245,9 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     /**
      * 获取 处理过的btnStr
      */
-    @ApiOperation("处理过的btnStr")
+    @ApiOperation("获取键串")
     @PostMapping("/getProcessedBtnStr")
+    // 刚刚发送的键串，可能有用
     public ResultVO getProcessedBtnStr(HttpServletRequest request) {
         String token = request.getHeader("token");
         UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
@@ -252,9 +269,8 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         try {
             ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
             HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
-            String ip = (String) info.get("ip");
-            int port = (int)info.get("port");
-            InetSocketAddress socketAddress = new InetSocketAddress(ip, port);
+            String ipPort = (String) info.get("ipPort");
+            InetSocketAddress socketAddress = new InetSocketAddress(ipPort.split(":")[0], Integer.parseInt(ipPort.split(":")[1]));
 
             sendInitToCB(ctx, socketAddress);
 
@@ -264,10 +280,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         }
     }
 
-    /**
-     * 主动载入操作过的记录
-     */
-    // @ApiOperation("主动载入操作过的记录")
+    // @ApiOperation("载入操作的记录操作：tag为0或1，为0表示清空记录，为1表示载入记录")
     // @PostMapping("/loadHistory")
     // public ResultVO loadHistory(HttpServletRequest request, @RequestParam("tag") String tag) {
     //     String token = request.getHeader("token");
@@ -275,7 +288,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     //     if (tag.equals("0")) {
     //         //不载入历史，直接清空记录
     //         boardOperationService.clearSteps(token);
-    //         return ResultVO.ok("初始化成功");
+    //         return ResultVO.ok("历史清除成功");
     //     } else if (tag.equals("1")) {
     //         //此前，用户需先调用烧录板卡的方法!!!
     //         //载入历史

@@ -72,7 +72,6 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         // 电路板客户端登录
         if (msg.contains("Login")) {
             String[] logins = msg.split("Login");
-            System.out.println("logins: " + Arrays.toString(logins));
 
             // todo：long_id 是指什么id，如何生成？
             String long_id = (logins[1].split("#"))[1];
@@ -231,7 +230,7 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             NettySocketHolder.remove(longId);
             redisUtils.del(CommonParams.REDIS_BOARD_SERVER_PREFIX + longId);
             circuitBoardService.deleteById(circuitBoard);
-            System.out.println("板卡" + longId + "失去连接，已从map和db中移除");
+            System.out.println("channelInactive: 板卡" + longId + "失去连接，已从map和db中移除");
         }
         // 链路关闭
         ctx.channel().close();
@@ -289,9 +288,9 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         // keypoint 根据 long_id 去 map 中找，如果找到了，map 更新，所有状态复原； 如果没找到，在 map 中添加。
         // 内容加入单例 Map  long_id : info
         if (NettySocketHolder.getInfo(long_id) != null)
-            System.out.println("map中已有板卡 " + long_id + " ，更新map");
+            log.info("map中已有板卡 " + long_id + " ，更新map");
         else
-            System.out.println("添加新板卡到 map！ longId: " + long_id + " ipPort: " + ipPort);
+            log.info("添加新板卡到 map！ longId: " + long_id + " ipPort: " + ipPort);
         NettySocketHolder.getInstance().put(long_id, info);
     }
 
@@ -319,7 +318,7 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
             //内容加入单例 Map
             updateDataBase(ipPort, long_id);
             NettySocketHolder.getInstance().put(long_id, info);
-            System.out.println("添加新板卡到 map！ longId: " + long_id + " ipPort: " + ipPort);
+            log.info("添加新板卡到 map！ longId: " + long_id + " ipPort: " + ipPort);
         }
     }
 

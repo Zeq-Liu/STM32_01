@@ -13,14 +13,14 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserConnectionVo {
-  private String token;
-  private Date createTime;
-  private Date updateTime;
-  private Long leftSeconds;
-  private boolean isFrozen;
-  //操作流水号，用于记录用户的使用情况
-  private String billId;
-  private String userIp;
-  private String cbIpPort;
-  private String longId;
+    private String token;
+    private Date createTime;
+    private Date updateTime;
+    private Long leftSeconds;
+    private boolean isFrozen;
+    //操作流水号，用于记录用户的使用情况
+    private String billId;
+    private String userIp;
+    private String cbIpPort;
+    private String longId;
 }
