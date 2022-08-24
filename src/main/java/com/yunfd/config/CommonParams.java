@@ -11,17 +11,17 @@ public class CommonParams {
   public final static String fileBaseRelativeURL = "yunfd/upload/";
 
   @Deprecated
-  public final static String bitFileStaticName = "vote5v1_1";
+  public final static String binFileStaticName = "vote5v1_1";
 
-  public final static int sliceSize = 12800;
+  public final static int sliceSize = 1024;
   public final static String[] authorizedPlatforms = {"bigData", "interrupt"};
 
   //保持连接 身份->true
   public final static String REDIS_TTL_PREFIX = "ttl:";
-  public final static Integer REDIS_TTL_LIMIT = 3 * 60; //connection must be checked within 3 minutes
+  public final static Integer REDIS_TTL_LIMIT = 3 * 600; //connection must be checked within 3 minutes
   //保持操作 身份->true
   public final static String REDIS_OP_TTL_PREFIX = "op:";
-  public final static Integer REDIS_OP_TTL_LIMIT = 3 * 60;
+  public final static Integer REDIS_OP_TTL_LIMIT = 3 * 600;
   //板卡使用计时器 身份->conn_obj
   public final static String REDIS_CONN_PREFIX = "conn:";
   //板卡使用计时器的shadow,单纯的倒计时器
@@ -47,16 +47,16 @@ public class CommonParams {
     return FileUtil.getAbsolutePath(getBase() + fileName + opFileSuffix);
   }
 
-  public static String getBitFileBase() {
+  public static String getBinFileBase() {
     String base = "yunfd/upload/";
     String absolutePath = FileUtil.getAbsolutePath(base);
     if (absolutePath.contains("target/")) return "../../" + base;
     else return base;
   }
 
-  public static String getFullBitFilePath(String fileName) {
-    String bitFileSuffix = ".bit";
-    return FileUtil.getAbsolutePath(getBitFileBase() + fileName + bitFileSuffix);
+  public static String getFullBinFilePath(String fileName) {
+    String binFileSuffix = ".bin";
+    return FileUtil.getAbsolutePath(getBinFileBase() + fileName + binFileSuffix);
   }
 
   //格式不对则返回null

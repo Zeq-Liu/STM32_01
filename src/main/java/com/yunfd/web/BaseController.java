@@ -23,8 +23,8 @@ public abstract class BaseController<S extends IService<T>, T extends BaseModel<
      * @param t
      * @return
      */
-    @ApiOperation("新增")
-    @PostMapping
+    // @ApiOperation("新增")
+    // @PostMapping
     public ResultVO create(@RequestBody T t) {
 
         t.setCreateTime(new Date());
@@ -41,8 +41,8 @@ public abstract class BaseController<S extends IService<T>, T extends BaseModel<
      * @param t
      * @return
      */
-    @ApiOperation("更新")
-    @PutMapping
+    // @ApiOperation("更新")
+    // @PutMapping
     public ResultVO update(@RequestBody T t) {
 
         t.setUpdateTime(new Date());
@@ -58,8 +58,8 @@ public abstract class BaseController<S extends IService<T>, T extends BaseModel<
      * @param id
      * @return
      */
-    @ApiOperation("根据id获取实体对象")
-    @GetMapping("/{id}")
+    // @ApiOperation("根据id获取实体对象")
+    // @GetMapping("/{id}")
     public T getInfo(@PathVariable String id) {
         return service.selectById(id);
     }
@@ -69,8 +69,8 @@ public abstract class BaseController<S extends IService<T>, T extends BaseModel<
      * @param id
      * @return
      */
-    @ApiOperation("删除")
-    @DeleteMapping("/{id}")
+    // @ApiOperation("删除")
+    // @DeleteMapping("/{id}")
     public ResultVO delete(@PathVariable String id) {
         if(service.deleteById(id)){
             return ResultVO.ok();

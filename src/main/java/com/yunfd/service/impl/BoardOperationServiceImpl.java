@@ -8,12 +8,13 @@ import com.yunfd.domain.vo.UserConnectionVo;
 import com.yunfd.netty.NettySocketHolder;
 import com.yunfd.service.BoardOperationService;
 import com.yunfd.util.RedisUtils;
-import com.yunfd.util.SendMessageToCB;
+import com.yunfd.util.core.SendMessageToCB;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,97 +24,106 @@ import java.util.List;
 //处理用户的操作信息，持久化
 public class BoardOperationServiceImpl implements BoardOperationService {
 
-  @Resource
-  private RedisUtils redisUtils;
+    @Resource
+    private RedisUtils redisUtils;
 
-  @Override
-  public boolean initOperationList(String userInfo) {
-    try {
-      String fileFullPath = CommonParams.getFullPath(userInfo);
-      if (FileUtil.exist(fileFullPath)) FileUtil.del(fileFullPath);
-      FileUtil.touch(fileFullPath);
-      return true;
-    } catch (Exception e) {
-      return false;
+    @Override
+    public boolean initOperationList(String userInfo) {
+        try {
+            String fileFullPath = CommonParams.getFullPath(userInfo);
+            if (FileUtil.exist(fileFullPath)) FileUtil.del(fileFullPath);
+            FileUtil.touch(fileFullPath);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
-  }
 
-  @Override
-  public boolean appendStepsToList(String userInfo, List<String> steps) {
-    try {
-      String fullPath = CommonParams.getFullPath(userInfo);
-      FileUtil.appendUtf8Lines(steps, fullPath);
-      return true;
-    } catch (Exception e) {
-      return false;
+    @Override
+    public boolean appendStepsToList(String userInfo, List<String> steps) {
+        try {
+            String fullPath = CommonParams.getFullPath(userInfo);
+            FileUtil.appendUtf8Lines(steps, fullPath);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
-  }
 
-  @Override
-  public boolean appendAStepToList(String userInfo, String step) {
-    try {
-      String fullPath = CommonParams.getFullPath(userInfo);
-      FileUtil.appendUtf8String(step + "\n", fullPath);
-      return true;
-    } catch (Exception e) {
-      return false;
+    @Override
+    public boolean appendAStepToList(String userInfo, String step) {
+        try {
+            String fullPath = CommonParams.getFullPath(userInfo);
+            FileUtil.appendUtf8String(step + "\n", fullPath);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
-  }
 
-  @Override
-  public List<String> readSteps(String userInfo) {
-    try {
-      String fullPath = CommonParams.getFullPath(userInfo);
-      return FileUtil.readUtf8Lines(fullPath);
-    } catch (Exception e) {
-      log.info("读取操作步骤出错，可能没有这个文件");
-      return new ArrayList<>();
+    @Override
+    public List<String> readSteps(String userInfo) {
+        try {
+            String fullPath = CommonParams.getFullPath(userInfo);
+            return FileUtil.readUtf8Lines(fullPath);
+        } catch (Exception e) {
+            log.info("读取操作步骤出错，可能没有这个文件");
+            return new ArrayList<>();
+        }
     }
-  }
 
-  @Override
-  public void clearSteps(String userInfo) {
-    FileUtil.del(CommonParams.getFullPath(userInfo));
-    FileUtil.del(CommonParams.getFullBitFilePath(userInfo));
-    log.info("已清空用户文件信息");
-  }
-
-  @Override
-  public boolean reloadEnv(String userInfo, String longId) {
-    if (FileUtil.exist(CommonParams.getFullBitFilePath(userInfo))) {
-      HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
-      ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
-
-      String filePath = CommonParams.getFullBitFilePath(userInfo);
-
-      info.put("isRecorded", "0");
-      info.put("count", 0);
-      info.put("filePath", filePath);
-      NettySocketHolder.put(longId, info);
-      log.info("instance:  " + NettySocketHolder.getInfo(longId));
-      //烧录
-      SendMessageToCB.recordBitOnCB(ctx, filePath, 0);
-      return true;
+    @Override
+    public void clearSteps(String userInfo) {
+        FileUtil.del(CommonParams.getFullPath(userInfo));
+        FileUtil.del(CommonParams.getFullBinFilePath(userInfo));
+        log.info("已清空用户文件信息");
     }
-    return false;
-  }
 
-  @Override
-  public void recordBitFileToBoardForTheFirstTime(String token, String filePath) {
-    Object o = redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token);
-    UserConnectionVo vo = Convert.convert(UserConnectionVo.class, o);
-    String longId = vo.getLongId();
+    @Override
+    public boolean reloadEnv(String userInfo, String longId) {
+        if (FileUtil.exist(CommonParams.getFullBinFilePath(userInfo))) {
+            HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
+            ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
 
-    if (Validator.isNotNull(longId) && !longId.equals("")) {
-      ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
-      HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
-      info.put("isRecorded", "0");
-      info.put("count", 0);
-      info.put("filePath", filePath);
-      NettySocketHolder.put(longId, info);
-      log.info("instance:  " + NettySocketHolder.getInfo(longId));
-      SendMessageToCB.recordBitOnCB(ctx, filePath, 0);
+            String filePath = CommonParams.getFullBinFilePath(userInfo);
 
+            info.put("isRecorded", "0");
+            info.put("count", 0);
+            info.put("filePath", filePath);
+            NettySocketHolder.put(longId, info);
+            log.info("instance:  " + NettySocketHolder.getInfo(longId));
+
+            String ipPort = (String) info.get("ipPort");
+            InetSocketAddress socketAddress = new InetSocketAddress(ipPort.split(":")[0], Integer.parseInt(ipPort.split(":")[1]));
+
+            //烧录
+            SendMessageToCB.recordBinOnCB(ctx, socketAddress, filePath, 0);
+            return true;
+        }
+        return false;
     }
-  }
+
+    @Override
+    public void recordBinFileToBoardForTheFirstTime(String token, String filePath) {
+        Object o = redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token);
+        UserConnectionVo vo = Convert.convert(UserConnectionVo.class, o);
+        String longId = vo.getLongId();
+
+        if (Validator.isNotNull(longId) && !longId.equals("")) {
+            ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
+            HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
+            info.put("isRecorded", "0");
+            // info.put("count", 0);
+            info.put("count", 1);
+            info.put("filePath", filePath);
+            NettySocketHolder.put(longId, info);
+            log.info("instance:  " + NettySocketHolder.getInfo(longId));
+
+            String ipPort = (String) info.get("ipPort");
+            InetSocketAddress socketAddress = new InetSocketAddress(ipPort.split(":")[0], Integer.parseInt(ipPort.split(":")[1]));
+
+            SendMessageToCB.recordBinOnCB(ctx, socketAddress, filePath, 1);
+
+        }
+    }
 }

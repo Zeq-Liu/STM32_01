@@ -61,6 +61,25 @@
   </properties>
 
   <dependencies>
+
+    <!-- protostuff java对象序列化和反序列化-->
+    <dependency>
+      <groupId>com.dyuproject.protostuff</groupId>
+      <artifactId>protostuff-api</artifactId>
+      <version>1.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dyuproject.protostuff</groupId>
+      <artifactId>protostuff-core</artifactId>
+      <version>1.2.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dyuproject.protostuff</groupId>
+      <artifactId>protostuff-runtime</artifactId>
+      <version>1.2.2</version>
+    </dependency>
+
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>

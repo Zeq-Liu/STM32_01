@@ -5,8 +5,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * @Author DJ
+ * 数据库类--使用板卡与相关信息
+ * @Description
+ * @Author LiuZequan
+ * @Date 2022/6/17 11:45
+ * @Version 2.0
  */
+
 @TableName("cb_use_time")
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -15,7 +20,7 @@ public class CbUseTime extends BaseModel<CbUseTime> {
   // 电路板longId
   private String cbLongId;
 
-  private String cbIp;
+  private String cbIpPort;
 
   private String schoolName;
 
@@ -34,8 +39,8 @@ public class CbUseTime extends BaseModel<CbUseTime> {
   private String moreInfo;
 
 
-  public CbUseTime(String cbIp) {
-    this.cbIp = cbIp;
+  public CbUseTime(String cbIpPort) {
+    this.cbIpPort = cbIpPort;
   }
 
   public CbUseTime() {

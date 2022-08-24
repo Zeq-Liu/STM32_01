@@ -15,7 +15,7 @@ import com.yunfd.service.CbUseTimeService;
 import com.yunfd.service.CircuitBoardService;
 import com.yunfd.service.IdentifyService;
 import com.yunfd.util.RedisUtils;
-import com.yunfd.util.SendMessageToCB;
+import com.yunfd.util.core.SendMessageToCB;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,8 +75,8 @@ public class CircuitBoardServiceImpl extends ServiceImpl<CircuitBoardMapper, Cir
   @Override
   public boolean freeCB(String token) {
     UserConnectionVo connectionVo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_SHADOW_PREFIX + token));
-    String cbIp = connectionVo.getCbIp();
-    simplyFreeCB(cbIp);
+    String cbIpPort = connectionVo.getCbIpPort();
+    simplyFreeCB(cbIpPort);
     if (Validator.isNotNull(connectionVo.getLongId())) {
 //      //更新数据库,记录时长
 //      CbUseTime time = null;
@@ -108,7 +108,8 @@ public class CircuitBoardServiceImpl extends ServiceImpl<CircuitBoardMapper, Cir
   @Override
   public String simplyFreeCB(String cbIp) {
     //正则匹配，检查有效性
-    final String reg = "^(\\d+\\.){3}\\d+:\\d+$";
+    // final String reg = "^(\\d+\\.){3}\\d+:\\d+$";
+    final String reg = "^(\\d+\\.){3}\\d+$";
     boolean match = ReUtil.isMatch(reg, cbIp);
 
     if (match) {
@@ -117,7 +118,7 @@ public class CircuitBoardServiceImpl extends ServiceImpl<CircuitBoardMapper, Cir
         for (CircuitBoard board : selectList) {
           String longId = board.getLongId();
           ChannelHandlerContext ctx = NettySocketHolder.getCtx(longId);
-          SendMessageToCB.sendENDToCB(ctx);
+          SendMessageToCB.sendENDToCB(ctx,NettySocketHolder.getInstance().getSocketAddress(longId));
 
           //更新map
           HashMap<String, Object> info = NettySocketHolder.getInfo(longId);

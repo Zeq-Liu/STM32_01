@@ -58,7 +58,7 @@ public class RedisKeyExpirationListener extends KeyExpirationEventMessageListene
       else if (CommonParams.REDIS_OP_TTL_PREFIX.contains(split[0])) {
         //用于计时3分钟内的操作，过期释放板卡保存操作
         UserConnectionVo vo = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
-        circuitBoardService.simplyFreeCB(vo.getCbIp());
+        circuitBoardService.simplyFreeCB(vo.getCbIpPort());
         waitingService.freezeConnection(token);
       }
       //结束实验保存数据
