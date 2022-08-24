@@ -24,7 +24,6 @@ import static com.yunfd.util.core.SendMessageToCB.sendInitToCB;
 
 /**
  * @Description
- * @Author LiuZequan
  * @Date 2022/6/8 23:39
  * @Version 1.0
  */

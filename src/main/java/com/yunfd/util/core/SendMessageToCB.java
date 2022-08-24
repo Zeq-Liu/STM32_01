@@ -90,7 +90,7 @@ public class SendMessageToCB {
      * @param BUTTON_STRING
      */
     public static void sendButtonStringToCB(ChannelHandlerContext ctx, InetSocketAddress socketAddress, String BUTTON_STRING) {
-        System.out.println("KB#" + BUTTON_STRING + "#");
+        System.out.println("KB#" + BUTTON_STRING);
         sendMsgByUdp(ctx, socketAddress, "KB#" + BUTTON_STRING );
     }
 

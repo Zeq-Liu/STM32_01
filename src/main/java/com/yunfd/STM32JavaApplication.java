@@ -12,7 +12,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 /**
  * 启动类
  * @Description
- * @Author LiuZequan
  * @Date 2022/4/13 10:14
  * @Version 2.0
  */
