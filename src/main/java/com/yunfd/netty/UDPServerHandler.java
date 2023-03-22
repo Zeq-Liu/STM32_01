@@ -143,7 +143,15 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
         if (msg.contains("STAT")) {
             String long_id = circuitBoardService.findByCBIP(ipPort).getLongId();
             String[] str = msg.split("#");
-
+            /*****************************************/
+            //刷新板卡和服务器的连接倒计时
+            redisUtils.set(CommonParams.REDIS_BOARD_SERVER_PREFIX + long_id, true, CommonParams.REDIS_BOARD_SERVER_LIMIT);
+            //System.out.println("心跳包: 来自long_id: " + long_id + " ip: " + ip);
+            String reg = "^[0-9A-Fa-f]{4}$";
+            if (long_id.matches(reg) && long_id.length() == 4) {
+                updateMap(ctx, ipPort, long_id);
+            } else System.out.println("电路板longId：" + long_id + "，格式不对，被拒绝更新");
+            /*****************************************/
             if (str[1].length() == 8) {
                 String lightString = str[1].substring(0, 4);
                 String nixieTubeString = str[1].substring(4, 8);
@@ -249,7 +257,7 @@ public class UDPServerHandler extends SimpleChannelInboundHandler<DatagramPacket
     //初始化以及更新NettySocketHolder(Map)和数据库中的电路板记录(仅当电路板Login时)
     private HashMap<String, Object> initMap(ChannelHandlerContext ctx, String ipPort, String long_id) {
         HashMap<String, Object> info = new HashMap<>();
-        // map 后面更新进redis
+        // map 后面更新进redis 文件
         info.put("ipPort", ipPort);
         info.put("ctx", ctx);
         info.put("status", "0");

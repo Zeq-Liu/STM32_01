@@ -50,6 +50,7 @@ public class SendMessageToCB {
         //发送到板卡 第0次和第1次数据发送有其他意思
         if (count == 1) {
             System.out.println("文件传输次数：" + limit);
+            // Begin#limit limit为文件传输次数
             sendMsgByUdp(ctx, socketAddress, "Begin#" + String.format("%02d", (int) limit));
             // } else if (count == 1) {
             //     System.out.println("文件的MD5码：" + md5);

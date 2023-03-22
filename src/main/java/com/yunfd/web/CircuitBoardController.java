@@ -53,6 +53,12 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
 
     /**
      * 用户主动释放板卡
+     * @param request
+     * @return {
+     *      "code": 0,
+     *      "msg": "已释放板卡",
+     *      "result": null
+     * }
      */
     @ApiOperation("用户主动释放板卡，清除redis、文件，保存用户使用信息")
     @PostMapping("/freeCB")
@@ -64,9 +70,15 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     }
 
     /**
-     * 查询电路板是否已烧录
+     * 通过longId查询电路板是否已烧录，msg返回 0，表示未烧录，返回 1，表示烧录
+     * @param longId
+     * @return {
+     *     "code": 0,
+     *     "msg": "0",
+     *     "result": null
+     * }
      */
-    @ApiOperation("查询电路板是否已烧录,可用longId 也可用ipPort，他们都是唯一的")
+    @ApiOperation("查询电路板是否已烧录,使用longId，他们都是唯一的")
     @PostMapping("/getRecordedStatusByLongId")
     public ResultVO getRecordedStatusByLongId(@RequestParam("longId") String longId) {
         CircuitBoard board;
@@ -84,7 +96,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         }
     }
 
-    @ApiOperation("查询电路板是否已烧录,可用longId 也可用ipPort，他们都是唯一的")
+    @ApiOperation("查询电路板是否已烧录,使用ipPort，他们都是唯一的")
     @PostMapping("/getRecordedStatusByCbIpPort")
     public ResultVO getRecordedStatusByCbIpPort(@RequestParam("cbIpPort") String cbIpPort) {
         CircuitBoard board;
@@ -148,7 +160,11 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
      * 接受按钮状态，并发送灯状态，实时保存操作到文件中
      *
      * @param buttonStatus
-     * @return
+     * @return{
+     *     "code": 0,
+     *     "msg": "按钮状态已发送！",
+     *     "result": null
+     * }
      */
     @ApiOperation("前端发送16位按钮状态键串，要求：需发送16个按键被点击的状态，0表示未点击过，1表示点击过，按板卡从左到右，上到下的顺序")
     @PostMapping("/sendButtonString")
@@ -168,6 +184,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         redisUtils.set(CommonParams.REDIS_OP_TTL_PREFIX + token, true, CommonParams.REDIS_OP_TTL_LIMIT);
 
         //要在bin文件烧录完成后才能传输
+        System.out.println("*********************************************"+NettySocketHolder.getInfo(longId).get("isRecorded").toString()+"*****************************");
         if (NettySocketHolder.getInfo(longId).get("isRecorded").toString().equals("1")) {
             //发送按钮状态
             SendMessageToCB.sendButtonStringToCB(NettySocketHolder.getInstance().getCtx(longId), NettySocketHolder.getInstance().getSocketAddress(longId), buttonStatus);
@@ -184,7 +201,13 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
     }
 
     /**
-     * 获取 NixieTube String
+     * 获取 NixieTube String，格式如下
+     * @param request
+     * @return{
+     *     "code": 0,
+     *     "msg": "0111",
+     *     "result": null
+     * }
      */
     @ApiOperation("获取数码管状态")
     @PostMapping("/getNixieTubeString")
@@ -198,7 +221,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
             String nixieTubeString = NettySocketHolder.getInfo(longId).get("nixieTubeStatus").toString();
             return ResultVO.ok(nixieTubeString);
         } catch (NullPointerException e) {
-            return ResultVO.error("nixieTubeString is null");
+            return ResultVO.error("nixieTubeStatus is null");
         }
     }
 
@@ -215,6 +238,7 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         System.out.println("longId: " + longId);
         try {
             String lightString = NettySocketHolder.getInfo(longId).get("lightStatus").toString();
+            System.out.println("lightStatus："+lightString);
             return ResultVO.ok(lightString);
         } catch (NullPointerException e) {
             return ResultVO.error("lightStatus is null");
@@ -233,10 +257,10 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
         // 打印id
         System.out.println("longId: " + longId);
         try {
-            String displayScreenString = NettySocketHolder.getInfo(longId).get("displayScreen").toString();
+            String displayScreenString = NettySocketHolder.getInfo(longId).get("screenStatus").toString();
             return ResultVO.ok(displayScreenString);
         } catch (NullPointerException e) {
-            return ResultVO.error("displayScreen is null");
+            return ResultVO.error("screenStatus is null");
         }
     }
 
@@ -270,6 +294,8 @@ public class CircuitBoardController extends BaseController<CircuitBoardService, 
             HashMap<String, Object> info = NettySocketHolder.getInfo(longId);
             String ipPort = (String) info.get("ipPort");
             InetSocketAddress socketAddress = new InetSocketAddress(ipPort.split(":")[0], Integer.parseInt(ipPort.split(":")[1]));
+            //将缓冲map中的isRecord设置为0
+            info.replace("isRecorded","0");
 
             sendInitToCB(ctx, socketAddress);
 

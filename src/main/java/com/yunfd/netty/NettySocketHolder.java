@@ -104,7 +104,13 @@ public class NettySocketHolder {
      * 返回 InetSocketAddress
      */
     public static InetSocketAddress getSocketAddress(String longId) {
-        return new InetSocketAddress((String) NettySocketHolder.getInfo(longId).get("ip"), (int) NettySocketHolder.getInfo(longId).get("port"));
+        String ipPort = (String) NettySocketHolder.getInfo(longId).get("ipPort");
+        System.out.println("-------------------------");
+        System.out.println("ipPort: " + ipPort);
+        System.out.println("-------------------------");
+        String ip = ipPort.split(":")[0];
+        int port = Integer.parseInt(ipPort.split(":")[1]);
+        return new InetSocketAddress(ip, port);
     }
 
     /**

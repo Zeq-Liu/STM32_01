@@ -57,6 +57,8 @@ public class WaitingController {
     @ApiOperation("分配给用户一块空闲的板卡")
     public ResultVO checkAvailability(HttpServletRequest request) {
         String token = request.getHeader("token");
+        // UserConnectionVo CV = Convert.convert(UserConnectionVo.class, redisUtils.get(CommonParams.REDIS_CONN_PREFIX + token));
+        // String longId = CV.getLongId();
         Long number = waitingService.getNumberOfPeopleInFrontOfUser(token);
         if (Validator.isNotNull(number) && number == 0) {
             CircuitBoard board = circuitBoardService.getAFreeBoard();

@@ -39,6 +39,12 @@ public class ResultVO implements Serializable {
         this.result = result;
     }
 
+    public ResultVO(Integer code, String msg, Object result) {
+        this.code = code;
+        this.msg = msg;
+        this.result = result;
+    }
+
     public ResultVO(Object result) {
         this.result = result;
     }
@@ -65,6 +71,10 @@ public class ResultVO implements Serializable {
 
     public static ResultVO ok() {
         return new ResultVO(CODE);
+    }
+
+    public static ResultVO ok(Integer code, String msg, Object result) {
+        return new ResultVO(code, msg, result);
     }
 
 
@@ -95,6 +105,6 @@ public class ResultVO implements Serializable {
     @Override
     public String toString() {
         // Create a copy, don't share the array
-        return "code:"+this.getCode()+"msg:"+this.getMsg()+"result:"+this.getResult();
+        return "code:" + this.getCode() + "msg:" + this.getMsg() + "result:" + this.getResult();
     }
 }

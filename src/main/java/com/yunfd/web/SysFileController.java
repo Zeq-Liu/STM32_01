@@ -44,9 +44,10 @@ public class SysFileController extends BaseController<SysFileService, SysFile> {
     @ApiOperation("上传bin文件")
     @PostMapping("/uploadBinFile")
     public ResultVO uploadBinFile(HttpServletRequest request, @RequestParam("file") MultipartFile file) throws Exception {
+        System.out.println("request: " + request);
         String originalFilename = file.getOriginalFilename();
         String binReg = ".*?\\.bin$";
-
+        System.out.println(file);
         if (originalFilename.matches(binReg)) {
             try {
                 //后缀成功匹配

@@ -25,7 +25,6 @@ public class CbUseTimeServiceImpl extends ServiceImpl<CbUseTimeMapper, CbUseTime
      */
     @Override
     public boolean saveUserUsingData(UserConnectionVo connectionVo) {
-        // todo 提前存档？
         CbUseTime time = new CbUseTime();
         String token = connectionVo.getToken();
         String[] info = token.split("_");
